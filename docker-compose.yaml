@@ -1,0 +1,60 @@
+services:
+  # Vector Database
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: pgvector_db_rag
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: vectordb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d vectordb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Database Web UI (pgAdmin)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgvector_ui_rag
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Local LLM Runner
+  ollama:
+    image: ollama/ollama
+    container_name: ollama_rag
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: /bin/sh -c "ollama pull nomic-embed-text-v2-moe && \
+      ollama serve"
+
+  # Ollama Web UI
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ollama_webui_rag
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - open-webui:/app/backend/data
+    depends_on:
+      - ollama
+
+volumes:
+  pgdata:
+  ollama_data:
+  open-webui:
