@@ -4,4 +4,10 @@ langchain-community==0.4.1
 
 # Atlassian
 atlassian-python-api==4.0.7
-lxml==6.1.0 # parse xml and html
+lxml==6.1.0
+beautifulsoup4==4.14.3
+
+# pgvector
+psycopg-pool==3.3.0
+psycopg[binary]==3.3.3
+pgvector==0.4.2
