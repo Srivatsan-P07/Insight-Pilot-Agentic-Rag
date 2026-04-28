@@ -7,7 +7,11 @@ atlassian-python-api==4.0.7
 lxml==6.1.0
 beautifulsoup4==4.14.3
 
-# pgvector
+# PgVector
 psycopg-pool==3.3.0
 psycopg[binary]==3.3.3
 pgvector==0.4.2
+
+# Google
+google-cloud-dataplex==2.18.0
+google-cloud-datacatalog==3.30.0

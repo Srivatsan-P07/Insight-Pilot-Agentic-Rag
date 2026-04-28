@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-class ConfluenceIngestor:
+class ConflueceConnector:
     def __init__(self, url: str, username: str, api_key: str):
         self.base_url = f"{url}/rest/api"
         self.auth = (username, api_key)
