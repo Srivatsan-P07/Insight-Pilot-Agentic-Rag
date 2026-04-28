@@ -38,12 +38,8 @@ class ConfluenceIngestor:
                     raise
         return {}
 
-    def fetch_pages(
-        self,
-        space_key: str,
-        updated_after: Optional[str] = None,
-        limit: int = 50,
-    ) -> List[Dict]:
+    ##############################################################################################################
+    def fetch_pages(self, space_key: str, updated_after: Optional[str] = None, limit: int = 50) -> List[Dict]:
         """
         Fetch pages optionally updated after a timestamp (ISO format).
         """
@@ -85,6 +81,7 @@ class ConfluenceIngestor:
 
         return pages
 
+    ##############################################################################################################
     def fetch_all_page_ids(self, space_key: str) -> set:
         """
         Used for deletion detection.
@@ -118,12 +115,8 @@ class ConfluenceIngestor:
 
         return ids
 
-    def sync(
-        self,
-        space_key: str,
-        last_sync_time: Optional[str] = None,
-        previous_page_ids: Optional[set] = None,
-    ):
+    ##############################################################################################################
+    def sync(self, space_key: str, last_sync_time: Optional[str] = None, previous_page_ids: Optional[set] = None ):
         """
         Main sync method:
         - Fetch new/updated pages
