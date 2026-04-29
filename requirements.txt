@@ -15,3 +15,7 @@ pgvector==0.4.2
 # Google
 google-cloud-dataplex==2.18.0
 google-cloud-datacatalog==3.30.0
+google-cloud-bigquery==3.41.0
+
+# 
+pandas==3.0.2
