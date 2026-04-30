@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-class ConflueceConnector:
+class ConfluenceConnector:
     def __init__(self, url: str, username: str, api_key: str):
         self.base_url = f"{url}/rest/api"
         self.auth = (username, api_key)
@@ -114,6 +114,23 @@ class ConflueceConnector:
             start += limit
 
         return ids
+
+    ##############################################################################################################
+    def fetch_page_by_id(self, page_id: str) -> Optional[Dict]:
+        """
+        Fetch a single page by its ID.
+        """
+        try:
+            data = self._request(f"content/{page_id}", params={"expand": "version,body.storage"})
+            return {
+                "external_id": data["id"],
+                "metadata": {'title': data["title"]},
+                "content": self.clean_confluence_html(data["body"]["storage"]["value"]),
+                "last_updated": data["version"]["when"],
+                "version": data["version"]["number"],
+            }
+        except requests.RequestException:
+            return None
 
     ##############################################################################################################
     def sync(self, space_key: str, last_sync_time: Optional[str] = None, previous_page_ids: Optional[set] = None ):

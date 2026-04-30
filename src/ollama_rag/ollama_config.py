@@ -1,5 +1,6 @@
 import ollama
 from config import Config
+from langchain_ollama import ChatOllama
 
 class OllamaEmbedder:
     def __init__(self, model=Config.ollama_model):
@@ -11,3 +12,7 @@ class OllamaEmbedder:
             input=text
         )
         return response.embeddings
+    
+    def chatmodelinstance(self):
+        return ChatOllama(model=Config.ollama_chat_model)
+

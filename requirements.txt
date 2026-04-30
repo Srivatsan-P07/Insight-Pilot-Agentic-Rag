@@ -1,6 +1,7 @@
 # for LLMs
 ollama==0.6.1
 langchain-community==0.4.1
+langchain-ollama==1.1.0
 
 # Atlassian
 atlassian-python-api==4.0.7

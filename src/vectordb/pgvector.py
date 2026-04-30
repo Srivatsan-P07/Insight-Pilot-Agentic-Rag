@@ -2,7 +2,9 @@ from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 from psycopg import sql
 import json
-
+from ollama_rag.ollama_config import OllamaEmbedder
+from config import Config
+from pgvector.psycopg import register_vector
 
 async def _configure_conn(conn):
     await register_vector_async(conn)
@@ -115,6 +117,38 @@ class PGVectorDB:
                         data
                     )
 
+    async def query_similar(self, text, top_k=5):
+        table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
+
+        embedder = OllamaEmbedder()
+        embedding = embedder.embed_text(text)
+        embedding = self.normalize_embedding(embedding)
+
+        async with self.pool.connection() as conn:
+            await register_vector_async(conn)  # ✅ do this once per connection
+
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    sql.SQL("""
+                        SELECT external_id, source_type, metadata, embedding <-> %s::vector AS distance
+                        FROM {}
+                        ORDER BY embedding <-> %s::vector
+                        LIMIT %s
+                    """).format(table_name),
+                    (embedding, embedding, top_k)
+                )
+                results = await cur.fetchall()
+
+        return [
+            {
+                'external_id': r[0],
+                'source_type': r[1],
+                'metadata': r[2],
+                'distance': r[3]
+            }
+            for r in results
+        ]
+    
     async def close(self):
         if hasattr(self, '_pool_opened') and self._pool_opened:
             await self.pool.close()
