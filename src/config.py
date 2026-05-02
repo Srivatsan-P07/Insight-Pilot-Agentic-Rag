@@ -8,6 +8,7 @@ class Config:
     ollama_host = "http://localhost:11434"
     ollama_model = "nomic-embed-text-v2-moe"
     ollama_chat_model = "llama3:8b"
+    #ollama_chat_model = "mistral:7b"
     
     # Confluence Configuration
     confluence_url = "https://vatsan-7.atlassian.net/wiki"

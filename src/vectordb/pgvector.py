@@ -1,10 +1,14 @@
+import logging
 from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 from psycopg import sql
 import json
-from ollama_rag.ollama_config import OllamaEmbedder
+from ollama_rag.ollama_config import OllamaObject
 from config import Config
 from pgvector.psycopg import register_vector
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 async def _configure_conn(conn):
     await register_vector_async(conn)
@@ -33,10 +37,12 @@ class PGVectorDB:
             raise
 
     async def connect(self):
+        logger.info(f"Connecting to PGVector database for source: {self.source_type}")
         await self.pool.open()
         self._pool_opened = True
         async with self.pool.connection() as conn:
             await self._create_table(conn)
+        logger.info("Database connection and table initialization complete.")
        
 
     async def _create_table(self, conn):
@@ -85,6 +91,7 @@ class PGVectorDB:
 
 
     async def store_embeddings(self, pages):
+        logger.info(f"Storing {len(pages)} embeddings into {self.source_type}_document_embeddings")
         table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
 
         async with self.pool.connection() as conn:
@@ -116,13 +123,16 @@ class PGVectorDB:
                         """).format(table_name),
                         data
                     )
+            logger.info("Successfully stored embeddings.")
 
     async def query_similar(self, text, top_k=5):
+        logger.info(f"Querying similar documents for text: {text[:50]}...")
         table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
 
-        embedder = OllamaEmbedder()
+        embedder = OllamaObject()
         embedding = embedder.embed_text(text)
         embedding = self.normalize_embedding(embedding)
+        logger.info("Text embedded and normalized for query.")
 
         async with self.pool.connection() as conn:
             await register_vector_async(conn)  # ✅ do this once per connection
@@ -139,6 +149,7 @@ class PGVectorDB:
                 )
                 results = await cur.fetchall()
 
+        logger.info(f"Found {len(results)} similar documents.")
         return [
             {
                 'external_id': r[0],
@@ -151,4 +162,5 @@ class PGVectorDB:
     
     async def close(self):
         if hasattr(self, '_pool_opened') and self._pool_opened:
+            logger.info("Closing PGVector database connection pool.")
             await self.pool.close()
