@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict
-from rag_agents.insight_pilot.chains.retrieval_grader import retrieval_grader
-from rag_agents.insight_pilot.graph.state import GraphState
+from rag_agents.confluence_assistant.chains.retrieval_grader import retrieval_grader
+from rag_agents.confluence_assistant.graph.state import GraphState
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 import asyncio
-from rag_agents.insight_pilot.graph.state import GraphState
-from rag_agents.insight_pilot.graph.graph import app
+from rag_agents.confluence_assistant.graph.state import GraphState
+from rag_agents.confluence_assistant.graph.graph import app
 import chainlit as cl
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
