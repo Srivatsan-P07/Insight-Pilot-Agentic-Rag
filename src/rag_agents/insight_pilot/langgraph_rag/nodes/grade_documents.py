@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict
-from langgraph_rag.chains.retrieval_grader import retrieval_grader
-from langgraph_rag.graph.state import GraphState
+from agents.insight_pilot.langgraph_rag.chains.retrieval_grader import retrieval_grader
+from agents.insight_pilot.langgraph_rag.graph.state import GraphState
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
