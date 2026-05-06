@@ -27,6 +27,7 @@ class DataplexConnector:
         self.schema_store = {}
 
     def fetch_all_entities(self) -> list[datacatalog_v1.Entry]:
+        logger.info(f"Searching for all BigQuery table entities in project: {self.project_id}")
         scope = datacatalog_v1.SearchCatalogRequest.Scope()
         scope.include_project_ids.append(self.project_id)
 
@@ -34,13 +35,17 @@ class DataplexConnector:
         results = self.client.search_catalog(scope=scope, query=query)
 
         datasets_tables = defaultdict(list)
+        count = 0
         for result in results:
             parts = result.linked_resource.split("/")
             datasets_tables[parts[-3]].append(parts[-1])
+            count += 1
 
+        logger.info(f"Found {count} tables across {len(datasets_tables)} datasets.")
         return dict(datasets_tables)
 
     def fetch_schema(self, linked_resource: str, location: str) -> Optional[Schema]:
+        logger.debug(f"Fetching schema for resource: {linked_resource} in location: {location}")
         try:
             request = datacatalog_v1.LookupEntryRequest(
                 linked_resource=linked_resource,

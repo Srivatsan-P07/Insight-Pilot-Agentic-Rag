@@ -1,14 +1,18 @@
 import requests
+import logging
 from datetime import datetime, timezone
 from typing import List, Dict, Optional
 
 from datetime import datetime
 from bs4 import BeautifulSoup
 
+logger = logging.getLogger(__name__)
+
 class ConfluenceConnector:
     def __init__(self, url: str, username: str, api_key: str):
         self.base_url = f"{url}/rest/api"
         self.auth = (username, api_key)
+        logger.info(f"Initialized ConfluenceConnector for {url}")
 
     def format_cql_datetime(self, iso_time: str) -> str:
         dt = datetime.fromisoformat(iso_time.replace("Z", "+00:00"))
@@ -30,11 +34,14 @@ class ConfluenceConnector:
         url = f"{self.base_url}/{endpoint}"
         for attempt in range(retries):
             try:
+                logger.debug(f"Requesting {url} (Attempt {attempt + 1})")
                 response = requests.get(url, auth=self.auth, params=params)
                 response.raise_for_status()
                 return response.json()
-            except requests.RequestException:
+            except requests.RequestException as e:
+                logger.warning(f"Request failed: {e}")
                 if attempt == retries - 1:
+                    logger.error(f"Max retries reached for {url}")
                     raise
         return {}
 
@@ -43,6 +50,7 @@ class ConfluenceConnector:
         """
         Fetch pages optionally updated after a timestamp (ISO format).
         """
+        logger.info(f"Fetching pages for space {space_key} updated after {updated_after}")
         start = 0
         pages = []
 
@@ -77,6 +85,7 @@ class ConfluenceConnector:
             if len(results) < limit:
                 break
 
+            logger.debug(f"Fetched {len(pages)} pages so far...")
             start += limit
 
         return pages
@@ -86,6 +95,7 @@ class ConfluenceConnector:
         """
         Used for deletion detection.
         """
+        logger.info(f"Fetching all page IDs for space {space_key}")
         start = 0
         limit = 100
         ids = set()
@@ -120,6 +130,7 @@ class ConfluenceConnector:
         """
         Fetch a single page by its ID.
         """
+        logger.info(f"Fetching page by ID: {page_id}")
         try:
             data = self._request(f"content/{page_id}", params={"expand": "version,body.storage"})
             return {
@@ -129,7 +140,8 @@ class ConfluenceConnector:
                 "last_updated": data["version"]["when"],
                 "version": data["version"]["number"],
             }
-        except requests.RequestException:
+        except requests.RequestException as e:
+            logger.error(f"Failed to fetch page {page_id}: {e}")
             return None
 
     ##############################################################################################################
@@ -139,6 +151,7 @@ class ConfluenceConnector:
         - Fetch new/updated pages
         - Detect deletions
         """
+        logger.info(f"Starting sync for space {space_key}")
 
         # 1. Fetch updated/new pages
         updated_pages = self.fetch_pages(
@@ -155,6 +168,8 @@ class ConfluenceConnector:
 
         # 3. New sync timestamp
         new_sync_time = datetime.now(timezone.utc).isoformat()
+
+        logger.info(f"Sync complete. Updated: {len(updated_pages)}, Deleted: {len(deleted_ids)}")
 
         return {
             "updated_pages": updated_pages,

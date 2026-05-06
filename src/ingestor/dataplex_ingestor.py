@@ -1,7 +1,7 @@
 from ingestor.dataplex_connector import DataplexConnector
 from ingestor.bigquery_connector import BigQueryConnector
 from vectordb.pgvector import PGVectorDB
-from ollama_rag.ollama_config import OllamaEmbedder
+from ollama_rag.ollama_config import OllamaObject
 from config import Config
 
 import asyncio
@@ -12,7 +12,7 @@ asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 class DataplexIngestor:
     def __init__(self, project_id: str):
         self.project_id = project_id
-        self.embedder = OllamaEmbedder()
+        self.embedder = OllamaObject()
         self.connector = DataplexConnector(project_id=project_id)
         self.bq_conn = BigQueryConnector(project_id=project_id)
     
