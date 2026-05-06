@@ -35,7 +35,7 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
 
         try:
             await vector_db.connect()
-            search_results = await vector_db.query_similar(question)
+            search_results = await vector_db.query_similar(question, 1)
 
             for result in search_results:
                 page_id = result.get('external_id')
