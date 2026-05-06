@@ -1,13 +1,13 @@
 import tracemalloc
 import asyncio
-from agents.insight_pilot.langgraph_rag.nodes.retrieve import retrieve
-from agents.insight_pilot.langgraph_rag.graph.state import GraphState
+from agents.insight_pilot.nodes.retrieve import retrieve
+from agents.insight_pilot.graph.state import GraphState
 from vectordb.pgvector import PGVectorDB
 from config import Config
-from agents.insight_pilot.langgraph_rag.nodes.grade_documents import gradedocuments
-from agents.insight_pilot.langgraph_rag.nodes.generate import generate
+from agents.insight_pilot.nodes.grade_documents import gradedocuments
+from agents.insight_pilot.nodes.generate import generate
 from ingestor.confluence_connector  import ConfluenceConnector
-from agents.insight_pilot.langgraph_rag.graph.graph import app
+from agents.insight_pilot.graph.graph import app
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 

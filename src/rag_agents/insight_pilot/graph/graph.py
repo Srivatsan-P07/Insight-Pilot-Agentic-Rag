@@ -1,10 +1,10 @@
 from langgraph.graph import END, StateGraph
 
-from agents.insight_pilot.langgraph_rag.graph.consts import RETRIEVE, GRADE_DOCUMENTS, GENERATE
-from agents.insight_pilot.langgraph_rag.graph.state import GraphState
-from agents.insight_pilot.langgraph_rag.nodes.retrieve import retrieve
-from agents.insight_pilot.langgraph_rag.nodes.grade_documents import gradedocuments
-from agents.insight_pilot.langgraph_rag.nodes.generate import generate
+from agents.insight_pilot.graph.consts import RETRIEVE, GRADE_DOCUMENTS, GENERATE
+from agents.insight_pilot.graph.state import GraphState
+from agents.insight_pilot.nodes.retrieve import retrieve
+from agents.insight_pilot.nodes.grade_documents import gradedocuments
+from agents.insight_pilot.nodes.generate import generate
 
 # Initialize WorkFlow
 workflow = StateGraph(GraphState)

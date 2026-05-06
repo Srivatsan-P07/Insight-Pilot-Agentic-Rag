@@ -1,6 +1,6 @@
 import asyncio
-from agents.insight_pilot.langgraph_rag.graph.state import GraphState
-from agents.insight_pilot.langgraph_rag.graph.graph import app
+from agents.insight_pilot.graph.state import GraphState
+from agents.insight_pilot.graph.graph import app
 import chainlit as cl
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
