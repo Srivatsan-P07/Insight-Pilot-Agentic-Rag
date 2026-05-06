@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict
-from agents.insight_pilot.graph.state import GraphState
+from rag_agents.insight_pilot.graph.state import GraphState
 from vectordb.pgvector import PGVectorDB
 from config import Config
 from ingestor.confluence_connector import ConfluenceConnector
