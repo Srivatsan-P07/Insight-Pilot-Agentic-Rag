@@ -33,39 +33,52 @@ async def chat_profile():
 
 @cl.on_chat_start
 async def on_chat_start():
-    chat_profile = cl.user_session.get("chat_profile")
+    profile = cl.user_session.get("chat_profile")
     await cl.Message(
-        content=f"starting chat using the {chat_profile} chat profile"
+        content=f"starting chat using the {profile} chat profile"
     ).send()
+    # Initialize graph_state in session
+    cl.user_session.set("graph_state", None)
 
-async def tools_agent(question: str) -> str:
-    graph_state = GraphState(
-        question=question,
-        generation=None,
-        documents=[],
-        source='confluence'
-    )
-    graph_state_dict = await app.ainvoke(input=graph_state)
-    return (graph_state_dict.get("generation") or "No answer generated.")
+async def tools_agent(question: str, graph_state: GraphState = None) -> str:
+    if graph_state is None:
+        graph_state = GraphState(
+            question=question,
+            generation=None,
+            documents=[],
+            source='confluence'
+        )
+    else:
+        # Update question while preserving history
+        graph_state.question = question
+    
+    graph_state = await app.ainvoke(input=graph_state)
+    return (graph_state['generation'], graph_state)
 
 @cl.on_message
 async def main(message: cl.Message):
     """Handle incoming user messages and send responses."""
-    chat_profile = cl.user_session.get("chat_profile")
+    profile = cl.user_session.get("chat_profile")
+    graph_state = cl.user_session.get("graph_state")
+    
     
     # RESEARCH AGENT
-    if chat_profile == "research_agent":
-        response = await tools_agent(message.content)
+    if profile == "research_agent":
+        response, state = await tools_agent(message.content, graph_state)
 
     # CODING AGENT
-    elif chat_profile == "coding_agent":
+    elif profile == "coding_agent":
         response = f"Coding Agent received: {message.content}"
+        state = graph_state
 
     # DATA AGENT
-    elif chat_profile == "data_agent":
+    elif profile == "data_agent":
         response = f"Data Agent received: {message.content}"
+        state = graph_state
 
     else:
         response = "No valid agent selected."
+        state = graph_state
 
     await cl.Message(content=response).send()
+    cl.user_session.set("graph_state", state)

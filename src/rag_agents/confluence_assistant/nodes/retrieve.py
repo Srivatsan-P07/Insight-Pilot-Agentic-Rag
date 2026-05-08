@@ -28,9 +28,9 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
         # Initialize DB and Connector
         vector_db = PGVectorDB(Config.PGVECTOR_CONNECTION_STRING, "confluence")
         connector = ConfluenceConnector(
-            Config.confluence_url,
-            Config.confluence_username,
-            Config.confluence_api_key
+            Config.CONFLUENCE_URL,
+            Config.CONFLUENCE_USERNAME,
+            Config.CONFLUENCE_API_KEY
         )
 
         try:

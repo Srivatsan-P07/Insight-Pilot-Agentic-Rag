@@ -19,16 +19,16 @@ class ConfluenceIngestorPipeline:
         logger.info("Initializing Confluence Ingestor Pipeline...")
         await self.pgvector_db.connect()
         self.ingestor = ConfluenceConnector(
-            self.config.confluence_url,
-            self.config.confluence_username,
-            self.config.confluence_api_key
+            self.config.CONFLUENCE_URL,
+            self.config.CONFLUENCE_USERNAME,
+            self.config.CONFLUENCE_API_KEY
         )
     
     async def run(self):
-        logger.info(f"Starting Confluence sync for space: {self.config.confluence_space_key}")
+        logger.info(f"Starting Confluence sync for space: {self.config.CONFLUENCE_SPACE_KEY}")
         # Run Ingestors
         result = self.ingestor.sync(
-            space_key=self.config.confluence_space_key,
+            space_key=self.config.CONFLUENCE_SPACE_KEY,
             last_sync_time="2025-04-25T10:00:00Z"
         )
         

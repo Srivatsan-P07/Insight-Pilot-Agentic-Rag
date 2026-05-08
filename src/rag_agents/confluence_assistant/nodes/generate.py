@@ -14,9 +14,6 @@ def generate(graph_state: GraphState) -> Dict[str, Any]:
     logger.info(f"Generating response for question: {question}")
     generation = generation_chain.invoke({"question": question, "context": documents})
     logger.info("Generation completed.")
+    graph_state['generation'] = generation
 
-    return({
-        "question": question,
-        "generation": generation,
-        "documents": documents
-    })
+    return(graph_state)
