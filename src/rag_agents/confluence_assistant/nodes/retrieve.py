@@ -18,9 +18,9 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
     Returns:
         graph_state: The updated state of the graph with the retrieved documents.
     """
-    question = graph_state["question"]
-    source = graph_state.get("source", "")
-    documents = graph_state.get("documents", [])
+    question = graph_state.question
+    source = graph_state.source
+    documents = graph_state.documents
 
     if source == 'confluence':
         logger.info(f"Retrieving documents for: {question} from {source}")
@@ -47,7 +47,7 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
                 
                 documents.append(f"Title: {page_title}\nContent: {content}")
             
-            graph_state["documents"] = documents
+            graph_state.documents = documents
         finally:
             await vector_db.close()
 

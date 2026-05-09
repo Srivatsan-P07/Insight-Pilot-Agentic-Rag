@@ -1,16 +1,9 @@
-from typing import List, TypedDict
+from dataclasses import dataclass, field
+from typing import List, Optional
 
-class GraphState(TypedDict):
-    """
-    Represents the state of our graph,
-
-    Attributes:
-        question: The original question that the graph is trying to answer.
-        generation: The current generation of the graph, which can be used to track the progress of the graph construction.
-        documents: A list of documents that have been retrieved and are relevant to the question.
-    """
-    
+@dataclass
+class GraphState:
     question: str
-    generation: int
-    documents: List[str]
-    source: str
+    generation: Optional[int] = None
+    documents: List[str] = field(default_factory=list)
+    source: str = "confluence"

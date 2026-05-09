@@ -8,7 +8,7 @@ asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Define selectable agents/profiles
 @cl.set_chat_profiles
-async def chat_profile():
+def chat_profile():
     return [
         cl.ChatProfile(
             name="research_agent",
@@ -48,7 +48,6 @@ async def main(message: cl.Message):
     
     # RESEARCH AGENT
     if profile == "research_agent":
-        print(graph_state)
         response, state = await conf_chain(message.content, graph_state)
 
     # CODING AGENT

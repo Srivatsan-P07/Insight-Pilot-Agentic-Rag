@@ -17,8 +17,8 @@ def gradedocuments(graph_state: GraphState) -> Dict[str, Any]:
     Returns:
         graph_state (GraphState): Updated state with filtered relevant documents
     """
-    question = graph_state.get("question")
-    documents = graph_state.get("documents", [])
+    question = graph_state.question
+    documents = graph_state.documents
 
     logger.info(f"Grading {len(documents)} documents for question: {question}")
     
@@ -34,5 +34,5 @@ def gradedocuments(graph_state: GraphState) -> Dict[str, Any]:
         else:
             logger.info("--- GRADE: DOCUMENT NOT RELEVANT ---")
 
-    graph_state["documents"] = filtered_docs
+    graph_state.documents = filtered_docs
     return graph_state
