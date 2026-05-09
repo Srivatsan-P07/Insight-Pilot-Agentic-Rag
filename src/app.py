@@ -1,7 +1,6 @@
 import asyncio
-from rag_agents.confluence_assistant.graph.state import GraphState
-from rag_agents.confluence_assistant.graph.graph import app
 import chainlit as cl
+from rag_agents.confluence_assistant.conf_ass import conf_chain
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -40,21 +39,6 @@ async def on_chat_start():
     # Initialize graph_state in session
     cl.user_session.set("graph_state", None)
 
-async def tools_agent(question: str, graph_state: GraphState = None) -> str:
-    if graph_state is None:
-        graph_state = GraphState(
-            question=question,
-            generation=None,
-            documents=[],
-            source='confluence'
-        )
-    else:
-        # Update question while preserving history
-        graph_state.question = question
-    
-    graph_state = await app.ainvoke(input=graph_state)
-    return (graph_state['generation'], graph_state)
-
 @cl.on_message
 async def main(message: cl.Message):
     """Handle incoming user messages and send responses."""
@@ -64,7 +48,8 @@ async def main(message: cl.Message):
     
     # RESEARCH AGENT
     if profile == "research_agent":
-        response, state = await tools_agent(message.content, graph_state)
+        print(graph_state)
+        response, state = await conf_chain(message.content, graph_state)
 
     # CODING AGENT
     elif profile == "coding_agent":
