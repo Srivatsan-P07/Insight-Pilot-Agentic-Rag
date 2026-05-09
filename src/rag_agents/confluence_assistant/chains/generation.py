@@ -1,5 +1,5 @@
 import logging
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from ollama_rag.ollama_config import OllamaObject
 
@@ -25,6 +25,7 @@ def create_generation_chain():
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_instruction),
+                MessagesPlaceholder(variable_name="chat_history"),
                 (
                     "human",
                     "Context:\n{context}\n\n"

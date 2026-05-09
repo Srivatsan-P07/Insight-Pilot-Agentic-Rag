@@ -1,9 +1,9 @@
-from dataclasses import dataclass, field
-from typing import List, Optional
+from pydantic import BaseModel
+from typing import List, Optional, Any
 
-@dataclass
-class GraphState:
+class GraphState(BaseModel):
     question: str
-    generation: Optional[int] = None
-    documents: List[str] = field(default_factory=list)
+    chat_history: List[Any]
+    generation: Optional[str] = None
+    documents: List[str]
     source: str = "confluence"

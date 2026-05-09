@@ -17,6 +17,7 @@ def gradedocuments(graph_state: GraphState) -> Dict[str, Any]:
     Returns:
         graph_state (GraphState): Updated state with filtered relevant documents
     """
+    chat_history = graph_state.chat_history
     question = graph_state.question
     documents = graph_state.documents
 
