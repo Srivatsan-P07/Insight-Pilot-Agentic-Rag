@@ -16,10 +16,9 @@ def create_generation_chain():
 
         # Define Prompt
         system_instruction = (
-            "You are a helpful assistant. "
-            "Use the following context to answer the question. If you don't know, say you don't know. "
-            "Keep your answers short and crisp. "
-            "Answer in bullet points and in a structured way."
+            "You are an expert BigQuery SQL developer. Generate accurate, optimized SQL queries based on the provided schema. "
+            "Only use tables and columns from the given schema. If the query cannot be constructed from the available schema, clearly state that. "
+            "Ensure queries are efficient, properly formatted, and follow BigQuery best practices."
         )
 
         prompt = ChatPromptTemplate.from_messages(
@@ -28,7 +27,7 @@ def create_generation_chain():
                 MessagesPlaceholder(variable_name="chat_history"),
                 (
                     "human",
-                    "Context:\n{context}\n\n"
+                    "Schemas:\n{schemas}\n\n"
                     "Question:\n{question}\n\n"
                     "Answer:"
                 ),

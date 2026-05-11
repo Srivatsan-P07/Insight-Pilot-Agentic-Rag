@@ -25,4 +25,4 @@ async def data_chain(question: str, graph_state: Optional[GraphState] = None) ->
         AIMessage(content=output_state.generation)]
     )
     
-    return output_state.generation, output_state
+    return output_state.generation, output_state.execution, output_state

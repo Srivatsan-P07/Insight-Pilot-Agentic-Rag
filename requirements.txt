@@ -22,5 +22,7 @@ google-cloud-datacatalog==3.30.0
 google-cloud-bigquery==3.41.0
 
 # UI
+tabulate==0.10.0
+db-dtypes==1.6.0
 pandas==2.3.3
 chainlit==2.11.1

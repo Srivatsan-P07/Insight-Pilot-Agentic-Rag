@@ -26,13 +26,13 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
 
         logger.info(f"Retrieving schemas for question: '{question}' from source: {source}")
 
-        vector_db = PGVectorDB(connection_string=Config.PGVECTOR_CONNECTION_STRING, table_name=source)
+        vector_db = PGVectorDB(connection_string=Config.PGVECTOR_CONNECTION_STRING, source_type=source)
         dataplex_connector = DataplexConnector(project_id=Config.GCP_PROJECT_ID)
 
         retrieved_schemas = []
         try:
             await vector_db.connect()
-            similar_tables = await vector_db.query_similar(query_text=question, limit=5)
+            similar_tables = await vector_db.query_similar(text=question, top_k=5)
 
             for entry in similar_tables:
                 full_table_id = entry.get("external_id")

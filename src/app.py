@@ -48,7 +48,9 @@ async def main(message: cl.Message):
 
     # DATA ANALYST
     elif profile == "analysis_data":
-        response, state = await data_chain(message.content, graph_state)
+        query_response, data_response, state = await data_chain(message.content, graph_state)
+        result = data_response.to_markdown(index=False) if hasattr(data_response, "to_markdown") else str(data_response)
+        response = f"**Generated Query:**\n```sql\n{query_response}\n```\n**Query Result:**\n{result}"
     
     # CODING AGENT
     elif profile == "engineering_coding":
