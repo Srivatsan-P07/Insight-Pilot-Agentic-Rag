@@ -5,10 +5,10 @@ asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 async def main():
     # ingest confluence data
-    pipeline = ConfluenceIngestorPipeline()
+    """pipeline = ConfluenceIngestorPipeline()
     await pipeline.initialize()
     await pipeline.run()
-    await pipeline.close()
+    await pipeline.close()"""
 
     # ingest dataplex data
     PROJECT_ID = "insight-pilot-trios"

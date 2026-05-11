@@ -1,6 +1,9 @@
 import asyncio
 import chainlit as cl
 from rag_agents.confluence_assistant.conf_ass import conf_chain
+from rag_agents.data_analysis.data_analyst import data_chain
+
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Define selectable agents/profiles
 @cl.set_chat_profiles
@@ -28,14 +31,14 @@ async def get_chat_profiles():
 
 @cl.on_chat_start
 async def on_chat_start():
-    profile = cl.user_session.get("get_chat_profiles")
+    profile = cl.user_session.get("chat_profile")
     # Initialize graph_state in session
     cl.user_session.set("graph_state", None)
 
 @cl.on_message
 async def main(message: cl.Message):
     """Handle incoming user messages and send responses."""
-    profile = cl.user_session.get("get_chat_profiles")
+    profile = cl.user_session.get("chat_profile")
     graph_state = cl.user_session.get("graph_state")
     
     
@@ -43,18 +46,17 @@ async def main(message: cl.Message):
     if profile == "analysis_confluence":
         response, state = await conf_chain(message.content, graph_state)
 
-    # CODING AGENT
-    elif profile == "engineering_coding":
-        response = f"Coding Agent is currently under development. Received: {message.content}"
-        state = graph_state
-
     # DATA ANALYST
     elif profile == "analysis_data":
-        response = f"Data Analyst is currently under development. Received: {message.content}"
+        response, state = await data_chain(message.content, graph_state)
+    
+    # CODING AGENT
+    elif profile == "engineering_coding":
+        response = f"Engineering coding is not yet implemented."
         state = graph_state
 
     else:
-        response = "No valid agent selected."
+        response = f"No valid agent selected for profile: {profile}."
         state = graph_state
 
     await cl.Message(content=response).send()
