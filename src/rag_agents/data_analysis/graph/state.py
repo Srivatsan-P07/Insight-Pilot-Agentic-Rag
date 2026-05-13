@@ -8,7 +8,9 @@ class GraphState(BaseModel):
     
     question: str
     chat_history: List[Any]
+    plotly: List[Any] = None
     generation: Optional[str] = None
     execution: Optional[pd.DataFrame] = None
     schemas: List[dict]
+    chart_config: Optional[dict] = None  # Stores type, x, and y
     source: str = "dataplex"

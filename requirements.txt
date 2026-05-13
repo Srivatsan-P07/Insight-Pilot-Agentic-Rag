@@ -22,6 +22,7 @@ google-cloud-datacatalog==3.30.0
 google-cloud-bigquery==3.41.0
 
 # UI
+plotly==6.7.0
 tabulate==0.10.0
 db-dtypes==1.6.0
 pandas==2.3.3

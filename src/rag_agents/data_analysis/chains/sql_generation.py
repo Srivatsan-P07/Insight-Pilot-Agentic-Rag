@@ -16,9 +16,10 @@ def create_generation_chain():
 
         # Define Prompt
         system_instruction = (
-            "You are an expert BigQuery SQL developer. Generate accurate, optimized SQL queries based on the provided schema. "
-            "Only use tables and columns from the given schema. If the query cannot be constructed from the available schema, clearly state that. "
-            "Ensure queries are efficient, properly formatted, and follow BigQuery best practices."
+            "You are an expert BigQuery SQL developer. Generate accurate, optimized SQL queries based on the provided schema.\n"
+            "Only use tables and columns from the given schema. If the query cannot be constructed from the available schema, clearly state that.\n"
+            "Ensure queries are efficient, properly formatted, and follow BigQuery best practices.\n"
+            "Only give the SQL query as the answer without any additional text or explanation."
         )
 
         prompt = ChatPromptTemplate.from_messages(

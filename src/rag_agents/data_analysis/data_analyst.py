@@ -2,27 +2,55 @@ from rag_agents.data_analysis.graph.state import GraphState
 from rag_agents.data_analysis.graph.graph import app
 from langchain_core.messages import HumanMessage, AIMessage
 from typing import Tuple, Optional
+import chainlit as cl
+import plotly.express as px
 
 
 async def data_chain(question: str, graph_state: Optional[GraphState] = None) -> Tuple[str, GraphState]:
+    # Initialize graph state if not provided
     if graph_state is None:
         graph_state = GraphState(
             question=question,
             chat_history=[],
             generation=None,
             schemas=[],
-            source='dataplex'
+            source="dataplex"
         )
     else:
         graph_state.question = question
 
     # Invoke the graph and get the updated state
-    output_state = GraphState(**await app.ainvoke(graph_state))
-    
+    graph_state = GraphState(**await app.ainvoke(graph_state))
+
     # Update chat history with the new exchange
-    output_state.chat_history.extend(
-        [HumanMessage(content=question),
-        AIMessage(content=output_state.generation)]
-    )
+    graph_state.chat_history.extend([
+        HumanMessage(content=question),
+        AIMessage(content=graph_state.generation)
+    ])
+
+    # Extract chart configuration
+    chart_type = graph_state.chart_config.get("type").lower()
+
+    # Define chart functions with configurations
+    chart_map = {
+        "bar": px.bar,
+        "line": px.line,
+        "pie": px.pie
+    }
     
-    return output_state.generation, output_state.execution, output_state
+    if chart_type not in chart_map:
+        return graph_state
+
+    # Generate and display chart
+    x_axis = graph_state.chart_config.get("x")
+    y_axis = graph_state.chart_config.get("y")
+    print(f"Generating {chart_type} chart with x: {x_axis} and y: {y_axis}")
+    
+    if chart_type == "pie":
+        fig = px.pie(graph_state.execution, names=x_axis, values=y_axis, title=f"{x_axis} Distribution")
+    else:
+        fig = chart_map[chart_type](graph_state.execution, x=x_axis, y=y_axis, title=f"{y_axis} by {x_axis}")
+    
+    graph_state.plotly = [cl.Plotly(name="dynamic_chart", figure=fig, display="inline")]
+
+    return graph_state

@@ -45,21 +45,26 @@ async def main(message: cl.Message):
     # CONFLUENCE ANALYST
     if profile == "analysis_confluence":
         response, state = await conf_chain(message.content, graph_state)
+        await cl.Message(content=response).send()
 
     # DATA ANALYST
     elif profile == "analysis_data":
-        query_response, data_response, state = await data_chain(message.content, graph_state)
+        state = await data_chain(message.content, graph_state)
+        query_response = state.generation
+        data_response = state.execution
         result = data_response.to_markdown(index=False) if hasattr(data_response, "to_markdown") else str(data_response)
-        response = f"**Generated Query:**\n```sql\n{query_response}\n```\n**Query Result:**\n{result}"
+        response = f"**Generated Query:**\n```sql\n{query_response}\n```\n**Query Result:**\n{result}\n"
+        await cl.Message(content=response).send()
+        await cl.Message(content=f"Generated {state.chart_config.get('type')} chart", elements=state.plotly).send()
     
     # CODING AGENT
     elif profile == "engineering_coding":
         response = f"Engineering coding is not yet implemented."
         state = graph_state
+        await cl.Message(content=response).send()
 
     else:
         response = f"No valid agent selected for profile: {profile}."
         state = graph_state
-
-    await cl.Message(content=response).send()
+        await cl.Message(content=response).send()
     cl.user_session.set("graph_state", state)
