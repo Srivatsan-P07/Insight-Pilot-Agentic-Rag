@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 
@@ -24,10 +24,12 @@ class Config:
         "postgresql://user:password@localhost:5432/vectordb"
     )
 
+class GCPConfig:
     # GCP & LLM
     GCP_PROJECT_ID = "insight-pilot-trios"
     GCP_REGION = "us-central1"
     CHAT_MODEL = "gemini-2.5-flash"
+    EMBEDDING_MODEL = "textembedding-gecko-001"
 
     _llm_config = {
         "project": GCP_PROJECT_ID,
@@ -36,3 +38,4 @@ class Config:
     }
 
     llm = ChatGoogleGenerativeAI(model=CHAT_MODEL, **_llm_config)
+    embedding_model = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL, **_llm_config)

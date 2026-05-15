@@ -1,7 +1,6 @@
-from config import Config
+from config import Config, GCPConfig
 from ingestor.confluence_connector import ConfluenceConnector
 from vectordb.pgvector import PGVectorDB
-from ollama_rag.ollama_config import OllamaObject
 
 import asyncio
 import logging
@@ -12,7 +11,7 @@ class ConfluenceIngestorPipeline:
     def __init__(self):
         self.config = Config()
         self.pgvector_db = PGVectorDB(Config.PGVECTOR_CONNECTION_STRING, "confluence")
-        self.embedder = OllamaObject()
+        self.embedder = GCPConfig.embedding_model
         self.ingestor = None
     
     async def initialize(self):
@@ -42,7 +41,7 @@ class ConfluenceIngestorPipeline:
             {
                 'source_type': "confluence",
                 'external_id': doc['external_id'],
-                'embedding': self.embedder.embed_text(doc['content']),
+                'embedding': self.embedder.embed_query(doc['content']),
                 'metadata': doc['metadata']
             }
             for doc in result["updated_pages"]

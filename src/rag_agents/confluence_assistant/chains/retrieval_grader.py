@@ -1,7 +1,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from ollama_rag.ollama_config import OllamaObject
+from config import GCPConfig
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -16,8 +16,7 @@ def create_retrieval_grader():
     """
     Initializes and returns the retrieval grader chain.
     """
-    ollama_model = OllamaObject()
-    llm = ollama_model.chatmodelinstance()
+    llm = GCPConfig.llm
 
     # Bind structured output to the LLM
     structured_llm_grader = llm.with_structured_output(GradeResponse)

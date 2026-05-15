@@ -3,7 +3,7 @@ from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 from psycopg import sql
 import json
-from ollama_rag.ollama_config import OllamaObject
+from config import GCPConfig
 from config import Config
 from pgvector.psycopg import register_vector
 
@@ -129,8 +129,8 @@ class PGVectorDB:
         logger.info(f"Querying similar documents for text: {text[:50]}...")
         table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
 
-        embedder = OllamaObject()
-        embedding = embedder.embed_text(text)
+        embedder = GCPConfig.embedding_model
+        embedding = embedder.embed_query(text)
         embedding = self.normalize_embedding(embedding)
         logger.info("Text embedded and normalized for query.")
 

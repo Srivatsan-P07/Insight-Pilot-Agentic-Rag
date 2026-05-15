@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict
 from rag_agents.data_analysis.graph.state import GraphState
 from vectordb.pgvector import PGVectorDB
-from config import Config
+from config import Config, GCPConfig
 from ingestor.dataplex_connector import DataplexConnector
 
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +27,7 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
         logger.info(f"Retrieving schemas for question: '{question}' from source: {source}")
 
         vector_db = PGVectorDB(connection_string=Config.PGVECTOR_CONNECTION_STRING, source_type=source)
-        dataplex_connector = DataplexConnector(project_id=Config.GCP_PROJECT_ID)
+        dataplex_connector = DataplexConnector(project_id=GCPConfig.GCP_PROJECT_ID)
 
         retrieved_schemas = []
         try:

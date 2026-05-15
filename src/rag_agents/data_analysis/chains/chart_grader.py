@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from ollama_rag.ollama_config import OllamaObject
+from config import GCPConfig
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def create_chart_selector():
     """
     Initializes and returns the chart selector chain.
     """
-    llm = OllamaObject().chatmodelinstance()
+    llm = GCPConfig.llm
     structured_llm = llm.with_structured_output(ChartSelectorResponse)
 
     system_instruction = (

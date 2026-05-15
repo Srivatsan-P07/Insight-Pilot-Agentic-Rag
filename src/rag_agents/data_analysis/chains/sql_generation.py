@@ -1,7 +1,7 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
-from ollama_rag.ollama_config import OllamaObject
+from config import GCPConfig
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +11,7 @@ def create_generation_chain():
     """
     try:
         # Initialize LLM
-        ollama_model = OllamaObject()
-        llm = ollama_model.chatmodelinstance()
+        llm = GCPConfig.llm
 
         # Define Prompt
         system_instruction = (

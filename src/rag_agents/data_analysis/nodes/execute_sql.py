@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict
 from ingestor.bigquery_connector import BigQueryConnector
-from config import Config
+from config import Config, GCPConfig
 
 from rag_agents.data_analysis.graph.state import GraphState
 
@@ -14,7 +14,7 @@ def execute_sql(graph_state: GraphState) -> GraphState:
     chat_history = graph_state.chat_history
 
     logger.info(f"Executing SQL for question: {question}")
-    bq_client = BigQueryConnector(project_id=Config.GCP_PROJECT_ID)
+    bq_client = BigQueryConnector(project_id=GCPConfig.GCP_PROJECT_ID)
     # remove first and last line of the generated SQL if they are code block markers
     if graph_state.generation.startswith("```sql") and graph_state.generation.endswith("```"):
         graph_state.generation = graph_state.generation[6:-3].strip()

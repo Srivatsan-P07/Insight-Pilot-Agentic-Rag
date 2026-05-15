@@ -1,8 +1,7 @@
 from ingestor.dataplex_connector import DataplexConnector
 from ingestor.bigquery_connector import BigQueryConnector
 from vectordb.pgvector import PGVectorDB
-from ollama_rag.ollama_config import OllamaObject
-from config import Config
+from config import Config, GCPConfig
 
 import asyncio
 
@@ -12,7 +11,7 @@ asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 class DataplexIngestor:
     def __init__(self, project_id: str):
         self.project_id = project_id
-        self.embedder = OllamaObject()
+        self.embedder = GCPConfig.embedding_model
         self.connector = DataplexConnector(project_id=project_id)
         self.bq_conn = BigQueryConnector(project_id=project_id)
     
@@ -50,7 +49,7 @@ class DataplexIngestor:
             {
                 'source_type': "dataplex",
                 'external_id': table,
-                'embedding': self.embedder.embed_text(str(schema[0])),
+                'embedding': self.embedder.embed_query(str(schema[0])),
                 'metadata': {"modified_time": schema[1]}
             }
             for table, schema in table_schema.items()
