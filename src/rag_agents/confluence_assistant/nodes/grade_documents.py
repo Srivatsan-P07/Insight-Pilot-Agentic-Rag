@@ -1,10 +1,10 @@
-import logging
+from config import Config, GCPConfig, AppLogger
 from typing import Any, Dict
 from rag_agents.confluence_assistant.chains.retrieval_grader import retrieval_grader
 from rag_agents.confluence_assistant.graph.state import GraphState
+from utils import multi_thread
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = AppLogger.setup()
 
 def gradedocuments(graph_state: GraphState) -> Dict[str, Any]:
     """
@@ -21,19 +21,20 @@ def gradedocuments(graph_state: GraphState) -> Dict[str, Any]:
     question = graph_state.question
     documents = graph_state.documents
 
-    logger.info(f"Grading {len(documents)} documents for question: {question}")
-    
-    filtered_docs = []
-    for doc in documents:
+    logger.app(f"Grading {len(documents)} documents for question: {question}")
+
+    def grade_doc(doc):
         score = retrieval_grader.invoke({"question": question, "document": doc})
-        # Assuming score is a Pydantic model or object with binary_score attribute
         is_relevant = score.binary_score.lower() == "yes"
-        
         if is_relevant:
-            logger.info("--- GRADE: DOCUMENT RELEVANT ---")
-            filtered_docs.append(doc)
+            logger.app("--- GRADE: DOCUMENT RELEVANT ---")
+            return doc
         else:
-            logger.info("--- GRADE: DOCUMENT NOT RELEVANT ---")
+            logger.app("--- GRADE: DOCUMENT NOT RELEVANT ---")
+            return None
+
+    results = multi_thread(documents,grade_doc)
+    filtered_docs = [doc for doc in results if doc is not None]
 
     graph_state.documents = filtered_docs
     return graph_state

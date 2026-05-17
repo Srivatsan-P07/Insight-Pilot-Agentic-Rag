@@ -1,18 +1,20 @@
 import requests
-import logging
+from config import AppLogger
 from datetime import datetime, timezone
 from typing import List, Dict, Optional
+from utils import multi_thread
 
 from datetime import datetime
 from bs4 import BeautifulSoup
 
-logger = logging.getLogger(__name__)
+
+logger = AppLogger.setup()
 
 class ConfluenceConnector:
     def __init__(self, url: str, username: str, api_key: str):
         self.base_url = f"{url}/rest/api"
         self.auth = (username, api_key)
-        logger.info(f"Initialized ConfluenceConnector for {url}")
+        logger.app(f"Initialized ConfluenceConnector for {url}")
 
     def format_cql_datetime(self, iso_time: str) -> str:
         dt = datetime.fromisoformat(iso_time.replace("Z", "+00:00"))
@@ -50,7 +52,7 @@ class ConfluenceConnector:
         """
         Fetch pages optionally updated after a timestamp (ISO format).
         """
-        logger.info(f"Fetching pages for space {space_key} updated after {updated_after}")
+        logger.app(f"Fetching pages for space {space_key} updated after {updated_after}")
         start = 0
         pages = []
 
@@ -73,14 +75,8 @@ class ConfluenceConnector:
             if not results:
                 break
 
-            for page in results:
-                pages.append({
-                    "external_id": page["id"],
-                    "metadata": {'title': page["title"]},
-                    "content": self.clean_confluence_html(page["body"]["storage"]["value"]),
-                    "last_updated": page["version"]["when"],
-                    "version": page["version"]["number"],
-                })
+            formatted_results = multi_thread(results, self._format_page_response)
+            pages.extend(formatted_results)
 
             if len(results) < limit:
                 break
@@ -90,12 +86,21 @@ class ConfluenceConnector:
 
         return pages
 
+    def _format_page_response(self, page: Dict) -> Dict:
+        return {
+            "external_id": page["id"],
+            "metadata": {'title': page["title"]},
+            "content": self.clean_confluence_html(page["body"]["storage"]["value"]),
+            "last_updated": page["version"]["when"],
+            "version": page["version"]["number"],
+        }
+
     ##############################################################################################################
     def fetch_all_page_ids(self, space_key: str) -> set:
         """
         Used for deletion detection.
         """
-        logger.info(f"Fetching all page IDs for space {space_key}")
+        logger.app(f"Fetching all page IDs for space {space_key}")
         start = 0
         limit = 100
         ids = set()
@@ -115,8 +120,8 @@ class ConfluenceConnector:
             if not results:
                 break
 
-            for page in results:
-                ids.add(page["id"])
+            page_ids = multi_thread(results, lambda x: x["id"])
+            ids.update(page_ids)
 
             if len(results) < limit:
                 break
@@ -130,16 +135,10 @@ class ConfluenceConnector:
         """
         Fetch a single page by its ID.
         """
-        logger.info(f"Fetching page by ID: {page_id}")
+        logger.app(f"Fetching page by ID: {page_id}")
         try:
             data = self._request(f"content/{page_id}", params={"expand": "version,body.storage"})
-            return {
-                "external_id": data["id"],
-                "metadata": {'title': data["title"]},
-                "content": self.clean_confluence_html(data["body"]["storage"]["value"]),
-                "last_updated": data["version"]["when"],
-                "version": data["version"]["number"],
-            }
+            return self._format_page_response(data)
         except requests.RequestException as e:
             logger.error(f"Failed to fetch page {page_id}: {e}")
             return None
@@ -151,7 +150,7 @@ class ConfluenceConnector:
         - Fetch new/updated pages
         - Detect deletions
         """
-        logger.info(f"Starting sync for space {space_key}")
+        logger.app(f"Starting sync for space {space_key}")
 
         # 1. Fetch updated/new pages
         updated_pages = self.fetch_pages(
@@ -169,7 +168,7 @@ class ConfluenceConnector:
         # 3. New sync timestamp
         new_sync_time = datetime.now(timezone.utc).isoformat()
 
-        logger.info(f"Sync complete. Updated: {len(updated_pages)}, Deleted: {len(deleted_ids)}")
+        logger.app(f"Sync complete. Updated: {len(updated_pages)}, Deleted: {len(deleted_ids)}")
 
         return {
             "updated_pages": updated_pages,

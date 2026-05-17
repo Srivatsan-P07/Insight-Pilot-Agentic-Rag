@@ -7,7 +7,6 @@ class GraphState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     
     question: str
-    chat_history: List[Any]
     plotly: List[Any] = None
     generation: Optional[str] = None
     execution: Optional[pd.DataFrame] = None

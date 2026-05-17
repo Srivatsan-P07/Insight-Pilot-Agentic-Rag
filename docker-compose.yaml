@@ -30,7 +30,19 @@ services:
       db:
         condition: service_healthy
 
-  # Local LLM Runner
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: phoenix
+    ports:
+      - "6006:6006"
+    environment:
+      - PHOENIX_PORT=6006
+      - PHOENIX_HOST=0.0.0.0
+    volumes:
+      - phoenix_data:/root/.phoenix
+    restart: unless-stopped
+
+   # Local LLM Runner
   ollama:
     image: ollama/ollama
     container_name: ollama_rag
@@ -55,5 +67,6 @@ services:
 
 volumes:
   pgdata:
+  phoenix_data:
   ollama_data:
   open-webui:

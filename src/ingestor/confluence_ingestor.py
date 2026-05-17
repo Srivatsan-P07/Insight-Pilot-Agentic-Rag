@@ -1,21 +1,22 @@
-from config import Config, GCPConfig
+from config import Config, GCPConfig, AppLogger, embedding_model
 from ingestor.confluence_connector import ConfluenceConnector
 from vectordb.pgvector import PGVectorDB
+from utils import multi_thread
 
 import asyncio
-import logging
+logger = AppLogger.setup()
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-logger = logging.getLogger(__name__)
 
 class ConfluenceIngestorPipeline:
     def __init__(self):
         self.config = Config()
         self.pgvector_db = PGVectorDB(Config.PGVECTOR_CONNECTION_STRING, "confluence")
-        self.embedder = GCPConfig.embedding_model
+        self.embedder = embedding_model
         self.ingestor = None
     
     async def initialize(self):
-        logger.info("Initializing Confluence Ingestor Pipeline...")
+        logger.app("Initializing Confluence Ingestor Pipeline...")
         await self.pgvector_db.connect()
         self.ingestor = ConfluenceConnector(
             self.config.CONFLUENCE_URL,
@@ -24,7 +25,7 @@ class ConfluenceIngestorPipeline:
         )
     
     async def run(self):
-        logger.info(f"Starting Confluence sync for space: {self.config.CONFLUENCE_SPACE_KEY}")
+        logger.app(f"Starting Confluence sync for space: {self.config.CONFLUENCE_SPACE_KEY}")
         # Run Ingestors
         result = self.ingestor.sync(
             space_key=self.config.CONFLUENCE_SPACE_KEY,
@@ -32,25 +33,37 @@ class ConfluenceIngestorPipeline:
         )
         
         if not result["updated_pages"]:
-            logger.info("No new or updated pages found to process.")
+            logger.app("No new or updated pages found to process.")
             return
 
-        logger.info(f"Embedding {len(result['updated_pages'])} pages...")
+        logger.app(f"Embedding {len(result['updated_pages'])} pages...")
+
+        def prepare_doc(doc):
+            try:
+                content = (doc.get("content") or "").strip()
+
+                if not content:
+                    print(f"Skipping empty document: {doc.get('external_id')}")
+                    return None
+                
+                return {
+                    'source_type': "confluence",
+                    'external_id': doc['external_id'],
+                    'embedding': self.embedder.embed_query(doc['content']),
+                    'metadata': doc['metadata']
+                }
+
+            except Exception as e:
+                logger.exception(f"Failed embedding doc {doc['external_id']}")
+                return None
+
         # Embed Content
-        docs_to_store = [
-            {
-                'source_type': "confluence",
-                'external_id': doc['external_id'],
-                'embedding': self.embedder.embed_query(doc['content']),
-                'metadata': doc['metadata']
-            }
-            for doc in result["updated_pages"]
-        ]
+        docs_to_store = multi_thread(result["updated_pages"], prepare_doc)
         
-        logger.info(f"Storing embeddings in PGVector...")
+        logger.app(f"Storing embeddings in PGVector...")
         await self.pgvector_db.store_embeddings(docs_to_store)
-        logger.info("Confluence ingestion pipeline completed successfully.")
+        logger.app("Confluence ingestion pipeline completed successfully.")
     
     async def close(self):
         await self.pgvector_db.close()
-        logger.info("Confluence Ingestor Pipeline closed.")
+        logger.app("Confluence Ingestor Pipeline closed.")

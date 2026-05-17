@@ -1,12 +1,12 @@
-import logging
+from config import AppLogger
 from typing import Optional
 from google.cloud import datacatalog_v1
 from google.cloud.datacatalog_v1.types import Schema
 from google.api_core.exceptions import NotFound, GoogleAPICallError
 from collections import defaultdict
+from utils import multi_thread
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = AppLogger.setup()
 
 
 class DataplexConnector:
@@ -27,7 +27,7 @@ class DataplexConnector:
         self.schema_store = {}
 
     def fetch_all_entities(self) -> list[datacatalog_v1.Entry]:
-        logger.info(f"Searching for all BigQuery table entities in project: {self.project_id}")
+        logger.app(f"Searching for all BigQuery table entities in project: {self.project_id}")
         scope = datacatalog_v1.SearchCatalogRequest.Scope()
         scope.include_project_ids.append(self.project_id)
 
@@ -35,13 +35,11 @@ class DataplexConnector:
         results = self.client.search_catalog(scope=scope, query=query)
 
         datasets_tables = defaultdict(list)
-        count = 0
         for result in results:
             parts = result.linked_resource.split("/")
             datasets_tables[parts[-3]].append(parts[-1])
-            count += 1
 
-        logger.info(f"Found {count} tables across {len(datasets_tables)} datasets.")
+        logger.app(f"Found tables across {len(datasets_tables)} datasets.")
         return dict(datasets_tables)
 
     def fetch_schema(self, linked_resource: str, location: str) -> Optional[Schema]:
@@ -52,15 +50,15 @@ class DataplexConnector:
                 location=location
             )
             entry = self.client.lookup_entry(request=request)
-            schema = [
-            {
-                "column_name": column.column,
-                "data_type": column.type_,
-                "description": column.description
-            }
-            for column in entry.schema.columns
-            ]
-            logger.info(f"Fetched schema for resource: {linked_resource}")
+
+            def format_column(column):
+                return {
+                    "column_name": column.column,
+                    "data_type": column.type_,
+                    "description": column.description
+                }
+
+            schema = multi_thread(list(entry.schema.columns), format_column)
             return schema
         except NotFound:
             logger.warning(f"Entry not found for resource: {linked_resource}")

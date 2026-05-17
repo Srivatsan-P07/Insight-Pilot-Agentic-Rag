@@ -8,25 +8,14 @@ import plotly.express as px
 
 async def data_chain(question: str, graph_state: Optional[GraphState] = None) -> Tuple[str, GraphState]:
     # Initialize graph state if not provided
-    if graph_state is None:
-        graph_state = GraphState(
-            question=question,
-            chat_history=[],
-            generation=None,
-            schemas=[],
-            source="dataplex"
-        )
-    else:
-        graph_state.question = question
+    graph_state = GraphState(
+        question=question,
+        generation=None,
+        schemas=[]
+    )
 
     # Invoke the graph and get the updated state
     graph_state = GraphState(**await app.ainvoke(graph_state))
-
-    # Update chat history with the new exchange
-    graph_state.chat_history.extend([
-        HumanMessage(content=question),
-        AIMessage(content=graph_state.generation)
-    ])
 
     # Extract chart configuration
     chart_type = graph_state.chart_config.get("type").lower()

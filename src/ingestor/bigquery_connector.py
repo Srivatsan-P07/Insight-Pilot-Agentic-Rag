@@ -2,9 +2,9 @@ from google.cloud import bigquery
 from google.cloud.exceptions import GoogleCloudError
 from typing import List, Dict, Any, Optional
 import pandas as pd
-import logging
+from config import AppLogger
 
-logger = logging.getLogger(__name__)
+logger = AppLogger.setup()
 
 class BigQueryConnector:
     """A connector class for interacting with Google BigQuery."""
@@ -19,7 +19,7 @@ class BigQueryConnector:
         """
         self.project_id = project_id
         self.client = bigquery.Client(project=project_id)
-        logger.info(f"Initialized BigQueryConnector for project: {project_id}")
+        logger.app(f"Initialized BigQueryConnector for project: {project_id}")
     
     def query(self, sql: str, job_config: Optional[bigquery.QueryJobConfig] = None) -> pd.DataFrame:
         """
@@ -36,7 +36,7 @@ class BigQueryConnector:
             logger.debug(f"Executing SQL query: {sql}")
             query_job = self.client.query(sql, job_config=job_config)
             df = query_job.to_dataframe()
-            logger.info(f"Query executed successfully. Returned {len(df)} rows.")
+            logger.app(f"Query executed successfully. Returned {len(df)} rows.")
             return df
         except GoogleCloudError as e:
             logger.error(f"BigQuery query failed: {str(e)}")
@@ -50,4 +50,4 @@ class BigQueryConnector:
     def close(self) -> None:
         """Close the BigQuery client."""
         self.client.close()
-        logger.info("BigQuery client closed.")
+        logger.app("BigQuery client closed.")

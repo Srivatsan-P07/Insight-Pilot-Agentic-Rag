@@ -3,18 +3,17 @@ from typing import Any, Dict
 
 from rag_agents.data_analysis.graph.state import GraphState
 from rag_agents.data_analysis.chains.sql_generation import generation_chain
+from config import Config, GCPConfig, AppLogger
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = AppLogger.setup()
 
 def generate_sql(graph_state: GraphState) -> GraphState:
     question = graph_state.question
     schemas = graph_state.schemas
-    chat_history = graph_state.chat_history
 
-    logger.info(f"Generating SQL for question: {question}")
-    generation = generation_chain.invoke({"chat_history": chat_history, "question": question, "schemas": schemas})
-    logger.info("Generation completed.")
+    logger.app(f"Generating SQL for question: {question}")
+    generation = generation_chain.invoke({"question": question, "schemas": schemas})
+    logger.app("Generation completed.")
     graph_state.generation = generation
 
     return graph_state

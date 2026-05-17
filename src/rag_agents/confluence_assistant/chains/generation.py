@@ -1,9 +1,9 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
-from config import GCPConfig
+from config import Config, GCPConfig, AppLogger, llm
 
-logger = logging.getLogger(__name__)
+logger = AppLogger.setup()
 
 def create_generation_chain():
     """
@@ -11,7 +11,7 @@ def create_generation_chain():
     """
     try:
         # Initialize LLM
-        llm = GCPConfig.llm
+        
 
         # Define Prompt
         system_instruction = (
@@ -37,7 +37,7 @@ def create_generation_chain():
         # Build Chain
         chain = prompt | llm | StrOutputParser()
         
-        logger.info("Generation chain successfully initialized.")
+        logger.app("Generation chain successfully initialized.")
         return chain
 
     except Exception as e:

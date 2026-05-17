@@ -1,14 +1,13 @@
-import logging
 from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 from psycopg import sql
 import json
-from config import GCPConfig
-from config import Config
+from config import Config, GCPConfig, AppLogger, embedding_model
 from pgvector.psycopg import register_vector
+from utils import multi_thread
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
+logger = AppLogger.setup()
 
 async def _configure_conn(conn):
     await register_vector_async(conn)
@@ -37,12 +36,12 @@ class PGVectorDB:
             raise
 
     async def connect(self):
-        logger.info(f"Connecting to PGVector database for source: {self.source_type}")
+        logger.app(f"Connecting to PGVector database for source: {self.source_type}")
         await self.pool.open()
         self._pool_opened = True
         async with self.pool.connection() as conn:
             await self._create_table(conn)
-        logger.info("Database connection and table initialization complete.")
+        logger.app("Database connection and table initialization complete.")
        
 
     async def _create_table(self, conn):
@@ -68,7 +67,7 @@ class PGVectorDB:
         # create index separately (cleaner)
         async with conn.cursor() as cur:
             await cur.execute(sql.SQL("""
-                CREATE INDEX IF NOT EXISTS idx_embedding_hnsw
+                CREATE INDEX IF NOT EXISTS idx_embedding_vector
                 ON {} USING hnsw (embedding vector_cosine_ops);
             """).format(table_name))
 
@@ -91,24 +90,26 @@ class PGVectorDB:
 
 
     async def store_embeddings(self, pages):
-        logger.info(f"Storing {len(pages)} embeddings into {self.source_type}_document_embeddings")
+        logger.app(f"Storing {len(pages)} embeddings into {self.source_type}_document_embeddings")
         table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
 
         async with self.pool.connection() as conn:
             await register_vector_async(conn)  # ✅ do this once per connection
 
-            data = []
-            for d in pages:
+            def prepare_row(d):
+                if d is None:
+                    return None
                 emb = self.normalize_embedding(d['embedding'])
                 if emb is None:
-                    continue
-
-                data.append((
+                    return None
+                return (
                     d['source_type'],
                     d['external_id'],
-                    emb,  # ✅ pass list directly
+                    emb,
                     json.dumps(d['metadata']) if 'metadata' in d else None
-                ))
+                )
+
+            data = [row for row in multi_thread(pages, prepare_row) if row is not None]
 
             async with conn.transaction():
                 async with conn.cursor() as cur:
@@ -123,16 +124,16 @@ class PGVectorDB:
                         """).format(table_name),
                         data
                     )
-            logger.info("Successfully stored embeddings.")
+            logger.app("Successfully stored embeddings.")
 
     async def query_similar(self, text, top_k=5):
-        logger.info(f"Querying similar documents for text: {text[:50]}...")
+        logger.app(f"Querying similar documents for text: {text[:50]}...")
         table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
 
-        embedder = GCPConfig.embedding_model
+        embedder = embedding_model
         embedding = embedder.embed_query(text)
         embedding = self.normalize_embedding(embedding)
-        logger.info("Text embedded and normalized for query.")
+        logger.app("Text embedded and normalized for query.")
 
         async with self.pool.connection() as conn:
             await register_vector_async(conn)  # ✅ do this once per connection
@@ -149,18 +150,19 @@ class PGVectorDB:
                 )
                 results = await cur.fetchall()
 
-        logger.info(f"Found {len(results)} similar documents.")
-        return [
-            {
-                'external_id': r[0],
-                'source_type': r[1],
-                'metadata': r[2],
-                'distance': r[3]
+        logger.app(f"Found {len(results)} similar documents.")
+
+        def format_result(r):
+            return {
+                "external_id": r[0],
+                "source_type": r[1],
+                "metadata": r[2],
+                "distance": r[3],
             }
-            for r in results
-        ]
+
+        return multi_thread(results, format_result)
     
     async def close(self):
         if hasattr(self, '_pool_opened') and self._pool_opened:
-            logger.info("Closing PGVector database connection pool.")
+            logger.app("Closing PGVector database connection pool.")
             await self.pool.close()

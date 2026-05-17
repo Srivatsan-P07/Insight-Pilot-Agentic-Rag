@@ -1,5 +1,9 @@
 from rag_agents.data_analysis.graph.state import GraphState
 from rag_agents.data_analysis.chains.chart_grader import chart_selector
+from config import Config, GCPConfig, AppLogger
+
+logger = AppLogger.setup()
+
 
 async def chart_selector_node(state: GraphState):
     """Select appropriate chart type based on data characteristics."""

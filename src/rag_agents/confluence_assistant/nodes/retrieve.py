@@ -1,12 +1,13 @@
-import logging
+from config import Config, GCPConfig, AppLogger
 from typing import Any, Dict
 from rag_agents.confluence_assistant.graph.state import GraphState
 from vectordb.pgvector import PGVectorDB
 from config import Config
 from ingestor.confluence_connector import ConfluenceConnector
+from utils import multi_thread
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
+logger = AppLogger.setup()
 
 async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
     """
@@ -23,7 +24,7 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
     documents = graph_state.documents
 
     if source == 'confluence':
-        logger.info(f"Retrieving documents for: {question} from {source}")
+        logger.app(f"Retrieving documents for: {question} from {source}")
         
         # Initialize DB and Connector
         vector_db = PGVectorDB(Config.PGVECTOR_CONNECTION_STRING, "confluence")
@@ -35,17 +36,18 @@ async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
 
         try:
             await vector_db.connect()
-            search_results = await vector_db.query_similar(question, 1)
+            search_results = await vector_db.query_similar(question, 5)
 
-            for result in search_results:
+            def fetch_content(result):
                 page_id = result.get('external_id')
                 page_title = result.get('metadata', {}).get('title', 'Untitled')
-
                 # Fetch full content from Confluence
                 page_data = connector.fetch_page_by_id(page_id)
                 content = page_data.get('content', '')
-                
-                documents.append(f"Title: {page_title}\nContent: {content}")
+                return f"Title: {page_title}\nContent: {content}"
+
+            fetched_docs = multi_thread(search_results,fetch_content)
+            documents.extend(fetched_docs)
             
             graph_state.documents = documents
         finally:
