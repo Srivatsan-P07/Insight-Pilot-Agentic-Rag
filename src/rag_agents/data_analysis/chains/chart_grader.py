@@ -2,10 +2,11 @@ import logging
 from typing import Optional
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from config import Config, GCPConfig, AppLogger, llm
+from config import Config, GCPConfig
+from functools import lru_cache
 
 # Configure logging
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
 class ChartSelectorResponse(BaseModel):
     """Response model for chart selection."""
@@ -22,12 +23,12 @@ class ChartSelectorResponse(BaseModel):
         description="The type of chart (Bar, Pie, or Line)."
     )
 
-def create_chart_selector():
+@lru_cache(maxsize=1)
+def get_chart_selector():
     """
     Initializes and returns the chart selector chain.
     """
-    
-    structured_llm = llm.with_structured_output(ChartSelectorResponse)
+    structured_llm = GCPConfig.get_llm().with_structured_output(ChartSelectorResponse)
 
     system_instruction = (
         "You are a chart selection expert. Given the dataframe schema and user question, select:\n"
@@ -44,8 +45,5 @@ def create_chart_selector():
         ]
     )
 
-    logger.app("Chart selector chain initialized successfully.")
+    logger.info("Chart selector chain initialized successfully.")
     return prompt | structured_llm
-
-# Singleton instance
-chart_selector = create_chart_selector()

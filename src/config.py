@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from functools import lru_cache
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 import ollama
 from langchain_ollama import ChatOllama
@@ -21,25 +22,17 @@ class AppLogger:
                     self._log(AppLogger.APP_LOG_LEVEL, message, args, **kwargs)
             logging.Logger.app = app_log
 
-        # Configure root logger to silence 3rd parties
-        logging.basicConfig(level=logging.WARNING)
+        # Configure root logger
+        logging.basicConfig(
+            level=AppLogger.APP_LOG_LEVEL,
+            format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
+        )
         
         # Silence specific noisy libraries
-        for lib in ["urllib3", "google", "httpx", "vertexai", "langchain"]:
+        for lib in ["urllib3", "google", "httpx", "vertexai", "langchain", "httpcore"]:
             logging.getLogger(lib).setLevel(logging.WARNING)
 
-        # Create and configure the app-specific logger
-        logger = logging.getLogger("my_app")
-        logger.setLevel(AppLogger.APP_LOG_LEVEL)
-        
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-        
-        logger.propagate = False
-        return logger
+        return logging.getLogger()
 
 class Config:
     # Confluence
@@ -81,6 +74,7 @@ class GCPConfig:
     
 
     @classmethod
+    @lru_cache(maxsize=1)
     def get_llm(cls):
         os.environ["GOOGLE_CLOUD_PROJECT"] = cls.GCP_PROJECT_ID
         if cls.PROVIDER == "google":
@@ -97,6 +91,7 @@ class GCPConfig:
             )
 
     @classmethod
+    @lru_cache(maxsize=1)
     def get_embedding_model(cls):
         if cls.PROVIDER == "google":
             return GoogleGenerativeAIEmbeddings(
@@ -110,8 +105,5 @@ class GCPConfig:
         else:
             return cls.ollama_object
 
-# Initialize instances outside the class for easy import
-GCPConfig.llm = GCPConfig.get_llm()
-GCPConfig.embedding_model = GCPConfig.get_embedding_model()
-llm = GCPConfig.llm
-embedding_model = GCPConfig.embedding_model
+# We no longer export instances directly.
+# Callers should use GCPConfig.get_llm() and GCPConfig.get_embedding_model() when needed.

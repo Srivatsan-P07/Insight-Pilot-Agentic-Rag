@@ -4,9 +4,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Callable, Any, Optional
 from tqdm import tqdm
 import os
-from config import Config, GCPConfig, AppLogger
+import logging
 
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
 
 def multi_thread(

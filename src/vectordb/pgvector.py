@@ -2,28 +2,33 @@ from psycopg_pool import AsyncConnectionPool
 from pgvector.psycopg import register_vector_async
 from psycopg import sql
 import json
-from config import Config, GCPConfig, AppLogger, embedding_model
+from config import Config, GCPConfig
 from pgvector.psycopg import register_vector
-from utils import multi_thread
+import logging
 
 
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
 async def _configure_conn(conn):
     await register_vector_async(conn)
 
 
 class PGVectorDB:
+    _pools = {}
+
     def __init__(self, connection_string: str, source_type: str):
         self.connection_string = connection_string
         self.source_type = source_type
-        self.pool = AsyncConnectionPool(
-            conninfo=self.connection_string,
-            min_size=1,
-            max_size=10,
-            open=False,
-            configure=_configure_conn
+        
+        if self.connection_string not in PGVectorDB._pools:
+            PGVectorDB._pools[self.connection_string] = AsyncConnectionPool(
+                conninfo=self.connection_string,
+                min_size=1,
+                max_size=10,
+                open=False,
+                configure=_configure_conn
             )
+        self.pool = PGVectorDB._pools[self.connection_string]
         self.table_name = sql.Identifier(f"{source_type}_document_embeddings")
 
     async def _get_conn(self):
@@ -36,12 +41,15 @@ class PGVectorDB:
             raise
 
     async def connect(self):
-        logger.app(f"Connecting to PGVector database for source: {self.source_type}")
-        await self.pool.open()
-        self._pool_opened = True
+        logger.info(f"Connecting to PGVector database for source: {self.source_type}")
+        try:
+            await self.pool.open()
+        except Exception:
+            pass # Pool might already be open
+        
         async with self.pool.connection() as conn:
             await self._create_table(conn)
-        logger.app("Database connection and table initialization complete.")
+        logger.info("Database connection and table initialization complete.")
        
 
     async def _create_table(self, conn):
@@ -90,7 +98,7 @@ class PGVectorDB:
 
 
     async def store_embeddings(self, pages):
-        logger.app(f"Storing {len(pages)} embeddings into {self.source_type}_document_embeddings")
+        logger.info(f"Storing {len(pages)} embeddings into {self.source_type}_document_embeddings")
         table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
 
         async with self.pool.connection() as conn:
@@ -109,7 +117,8 @@ class PGVectorDB:
                     json.dumps(d['metadata']) if 'metadata' in d else None
                 )
 
-            data = [row for row in multi_thread(pages, prepare_row) if row is not None]
+            data = [prepare_row(p) for p in pages]
+            data = [row for row in data if row is not None]
 
             async with conn.transaction():
                 async with conn.cursor() as cur:
@@ -124,16 +133,16 @@ class PGVectorDB:
                         """).format(table_name),
                         data
                     )
-            logger.app("Successfully stored embeddings.")
+            logger.info("Successfully stored embeddings.")
 
     async def query_similar(self, text, top_k=5):
-        logger.app(f"Querying similar documents for text: {text[:50]}...")
+        logger.info(f"Querying similar documents for text: {text[:50]}...")
         table_name = sql.Identifier(f"{self.source_type}_document_embeddings")
 
-        embedder = embedding_model
-        embedding = embedder.embed_query(text)
+        embedder = GCPConfig.get_embedding_model()
+        embedding = await embedder.aembed_query(text)
         embedding = self.normalize_embedding(embedding)
-        logger.app("Text embedded and normalized for query.")
+        logger.info("Text embedded and normalized for query.")
 
         async with self.pool.connection() as conn:
             await register_vector_async(conn)  # ✅ do this once per connection
@@ -150,7 +159,7 @@ class PGVectorDB:
                 )
                 results = await cur.fetchall()
 
-        logger.app(f"Found {len(results)} similar documents.")
+        logger.info(f"Found {len(results)} similar documents.")
 
         def format_result(r):
             return {
@@ -160,9 +169,9 @@ class PGVectorDB:
                 "distance": r[3],
             }
 
-        return multi_thread(results, format_result)
+        return [format_result(r) for r in results]
     
     async def close(self):
         if hasattr(self, '_pool_opened') and self._pool_opened:
-            logger.app("Closing PGVector database connection pool.")
+            logger.info("Closing PGVector database connection pool.")
             await self.pool.close()

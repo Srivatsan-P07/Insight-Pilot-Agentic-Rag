@@ -2,7 +2,12 @@ import asyncio
 import chainlit as cl
 from rag_agents.confluence_assistant.conf_ass import conf_chain
 from rag_agents.data_analysis.data_analyst import data_chain
+from config import AppLogger
+from langchain_core.globals import set_llm_cache
+from langchain_core.caches import InMemoryCache
 
+AppLogger.setup()
+set_llm_cache(InMemoryCache())
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Define selectable agents/profiles
@@ -41,30 +46,52 @@ async def main(message: cl.Message):
     profile = cl.user_session.get("chat_profile")
     graph_state = cl.user_session.get("graph_state")
     
-    
-    # CONFLUENCE ANALYST
-    if profile == "analysis_confluence":
-        response, state = await conf_chain(message.content, graph_state)
-        await cl.Message(content=response).send()
+    try:
+        # CONFLUENCE ANALYST
+        if profile == "analysis_confluence":
+            async with cl.Step(name="Confluence Analyst") as step:
+                step.output = "Retrieving and analyzing documents..."
+                response, state = await conf_chain(message.content, graph_state)
+                step.output = "Analysis complete."
+            
+            await cl.Message(content=response).send()
+            cl.user_session.set("graph_state", state)
 
-    # DATA ANALYST
-    elif profile == "analysis_data":
-        state = await data_chain(message.content, graph_state)
-        query_response = state.generation
-        data_response = state.execution
-        result = data_response.to_markdown(index=False) if hasattr(data_response, "to_markdown") else str(data_response)
-        response = f"**Generated Query:**\n```sql\n{query_response}\n```\n**Query Result:**\n{result}\n"
-        await cl.Message(content=response).send()
-        await cl.Message(content=f"Generated {state.chart_config.get('type')} chart", elements=state.plotly).send()
-    
-    # CODING AGENT
-    elif profile == "engineering_coding":
-        response = f"Engineering coding is not yet implemented."
-        state = graph_state
-        await cl.Message(content=response).send()
+        # DATA ANALYST
+        elif profile == "analysis_data":
+            async with cl.Step(name="Data Analyst") as step:
+                step.output = "Querying data and generating insights..."
+                state = await data_chain(message.content, graph_state)
+                step.output = "Execution complete."
+                
+            query_response = state.generation
+            data_response = state.execution
+            result = data_response.to_markdown(index=False) if hasattr(data_response, "to_markdown") else str(data_response)
+            
+            # Format nicely
+            response = (
+                f"**Generated SQL Query:**\n```sql\n{query_response}\n```\n\n"
+                f"**Query Result:**\n{result}\n"
+            )
+            await cl.Message(content=response).send()
+            
+            chart_type = state.chart_config.get('type')
+            if chart_type and chart_type != "table" and hasattr(state, 'plotly') and state.plotly:
+                await cl.Message(content=f"**Generated {chart_type.capitalize()} Chart**", elements=state.plotly).send()
+                
+            cl.user_session.set("graph_state", state)
 
-    else:
-        response = f"No valid agent selected for profile: {profile}."
-        state = graph_state
-        await cl.Message(content=response).send()
-    cl.user_session.set("graph_state", state)
+        # CODING AGENT
+        elif profile == "engineering_coding":
+            await cl.Message(
+                content="🚧 **Engineering coding is not yet implemented.** Please select another profile."
+            ).send()
+
+        else:
+            await cl.Message(
+                content=f"⚠️ No valid agent selected for profile: **{profile}**."
+            ).send()
+            
+    except Exception as e:
+        AppLogger.setup().error(f"Error handling message: {e}", exc_info=True)
+        await cl.ErrorMessage(content=f"An error occurred while processing your request: {str(e)}").send()

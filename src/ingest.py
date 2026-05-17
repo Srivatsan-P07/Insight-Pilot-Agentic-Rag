@@ -1,6 +1,9 @@
 from ingestor.dataplex_ingestor import DataplexIngestor
 from ingestor.confluence_ingestor import ConfluenceIngestorPipeline
 import asyncio
+from config import AppLogger
+
+AppLogger.setup()
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 async def main():

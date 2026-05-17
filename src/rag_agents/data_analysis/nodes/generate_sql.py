@@ -2,18 +2,19 @@ import logging
 from typing import Any, Dict
 
 from rag_agents.data_analysis.graph.state import GraphState
-from rag_agents.data_analysis.chains.sql_generation import generation_chain
-from config import Config, GCPConfig, AppLogger
+from rag_agents.data_analysis.chains.sql_generation import get_generation_chain
+from config import Config, GCPConfig
 
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
 def generate_sql(graph_state: GraphState) -> GraphState:
     question = graph_state.question
     schemas = graph_state.schemas
 
-    logger.app(f"Generating SQL for question: {question}")
-    generation = generation_chain.invoke({"question": question, "schemas": schemas})
-    logger.app("Generation completed.")
+    logger.info(f"Generating SQL for question: {question}")
+    chain = get_generation_chain()
+    generation = chain.invoke({"question": question, "schemas": schemas})
+    logger.info("Generation completed.")
     graph_state.generation = generation
 
     return graph_state

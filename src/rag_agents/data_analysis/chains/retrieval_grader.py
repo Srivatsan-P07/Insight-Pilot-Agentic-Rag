@@ -1,10 +1,10 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from config import Config, GCPConfig, AppLogger, llm
+from config import Config, GCPConfig
 
 # Configure logging
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
 class GradeResponse(BaseModel):
     """Binary score for schema relevance assessment."""
@@ -19,7 +19,7 @@ def create_retrieval_grader():
     
 
     # Bind structured output to the LLM
-    structured_llm_grader = llm.with_structured_output(GradeResponse)
+    structured_llm_grader = GCPConfig.get_llm().with_structured_output(GradeResponse)
 
     system_instruction = (
         "You are an expert data grader evaluating the relevance of a retrieved database schema to a user's question.\n"
@@ -30,11 +30,11 @@ def create_retrieval_grader():
     grade_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_instruction),
-            ("human", "Retrieved schema: \n\n {schema} \n\n User question: {question}"),
+            ("human", "Retrieved schemas: \n\n {schemas} \n\n User question: {question}"),
         ]
     )
 
-    logger.app("Retrieval grader chain successfully initialized.")
+    logger.info("Retrieval grader chain successfully initialized.")
     return grade_prompt | structured_llm_grader
 
 # Singleton instance for the application

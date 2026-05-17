@@ -1,40 +1,38 @@
+from typing import List
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from config import Config, GCPConfig, AppLogger, llm
+from config import Config, GCPConfig
+from functools import lru_cache
+import logging
 
 # Configure logging
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
 class GradeResponse(BaseModel):
-    """Binary score for document relevance assessment."""
-    binary_score: str = Field(
-        description="Relevance score: 'yes' if the document is relevant to the question, otherwise 'no'."
-    )
+    document_id: int = Field(description="The numeric ID/index of the document as provided in the prompt")
+    is_relevant: bool = Field(description="True if the document is relevant to the question, otherwise False.")
 
-def create_retrieval_grader():
-    """
-    Initializes and returns the retrieval grader chain.
-    """
-    
+class BatchGradeResponse(BaseModel):
+    """Batch assessment of multiple documents."""
+    results: List[GradeResponse] = Field(description="List of grading results for the provided documents.")
 
+@lru_cache(maxsize=1)
+def get_retrieval_grader():
     # Bind structured output to the LLM
-    structured_llm_grader = llm.with_structured_output(GradeResponse)
+    structured_llm_grader = GCPConfig.get_llm().with_structured_output(BatchGradeResponse)
 
     system_instruction = (
-        "You are a grader assessing relevance of a retrieved document to a user question.\n"
-        "If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant.\n"
-        "Give a binary score 'yes' or 'no' to indicate whether the document is relevant to the question."
+        "You are a grader assessing relevance of retrieved documents to a user question.\n"
+        "If a document contains keyword(s) or semantic meaning related to the question, grade it as relevant.\n"
+        "Assess ALL provided documents and return a list of relevance scores."
     )
 
     grade_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_instruction),
-            ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
+            ("human", "Retrieved documents: \n\n {documents} \n\n User question: {question}"),
         ]
     )
 
-    logger.app("Retrieval grader chain successfully initialized.")
+    logger.info("Retrieval grader chain successfully initialized.")
     return grade_prompt | structured_llm_grader
-
-# Singleton instance for the application
-retrieval_grader = create_retrieval_grader()

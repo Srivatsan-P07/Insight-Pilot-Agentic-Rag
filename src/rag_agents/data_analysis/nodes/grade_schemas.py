@@ -1,40 +1,30 @@
 import logging
 from typing import Any, Dict
-from rag_agents.data_analysis.chains.retrieval_grader import retrieval_grader
+from rag_agents.data_analysis.chains.retrieval_grader import create_retrieval_grader
 from rag_agents.data_analysis.graph.state import GraphState
-from config import Config, GCPConfig, AppLogger
-from utils import multi_thread
+from config import Config, GCPConfig
 
+logger = logging.getLogger(__name__)
 
-logger = AppLogger.setup()
-
-def gradeschemas(graph_state: GraphState) -> Dict[str, Any]:
-    """
-    Determines whether the retrieved schemas are required to the question
-    If a schema is not relevant, it is filtered out.
-
-    Args:
-        graph_state (GraphState): The current graph state
-
-    Returns:
-        graph_state (GraphState): Updated state with filtered relevant schemas
-    """
+async def gradeschemas(graph_state: GraphState) -> Dict[str, Any]:
     question = graph_state.question
     schemas = graph_state.schemas
 
-    logger.app(f"Grading {len(schemas)} schemas for question: {question}")
+    logger.info(f"Grading {len(schemas)} schemas for question: {question}")
+    if not schemas:
+        return graph_state
 
-    def grade_schema(schema):
-        score = retrieval_grader.invoke({"question": question, "schema": schema})
-        if score.binary_score.lower() == "yes":
-            logger.app("--- GRADE: SCHEMA RELEVANT ---")
-            return schema
-        else:
-            logger.app("--- GRADE: SCHEMA NOT RELEVANT ---")
-            return None
-
-    results = multi_thread(schemas,grade_schema)
-    filtered_schemas = [s for s in results if s is not None]
+    formatted_schemas = "\n\n".join([f"Table: {s['table_name']}\nSchema: {s['schema']}" for s in schemas])
+    
+    chain = create_retrieval_grader()
+    grade_response = await chain.ainvoke({"question": question, "schemas": formatted_schemas})
+    
+    if grade_response.binary_score == "yes":
+        filtered_schemas = schemas
+    else:
+        filtered_schemas = []
+    
+    logger.info(f"Retained {len(filtered_schemas)} relevant schemas out of {len(schemas)}.")
     
     graph_state.schemas = filtered_schemas
     return graph_state

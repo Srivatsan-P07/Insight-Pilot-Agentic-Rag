@@ -1,18 +1,17 @@
 import logging
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
-from config import Config, GCPConfig, AppLogger, llm
+from config import Config, GCPConfig
+from functools import lru_cache
 
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
-def create_generation_chain():
+@lru_cache(maxsize=1)
+def get_generation_chain():
     """
     Initializes and returns the generation chain for the RAG pipeline.
     """
     try:
-        # Initialize LLM
-        
-
         # Define Prompt
         system_instruction = (
             "You are a helpful assistant. "
@@ -35,14 +34,11 @@ def create_generation_chain():
         )
 
         # Build Chain
-        chain = prompt | llm | StrOutputParser()
+        chain = prompt | GCPConfig.get_llm() | StrOutputParser()
         
-        logger.app("Generation chain successfully initialized.")
+        logger.info("Generation chain successfully initialized.")
         return chain
 
     except Exception as e:
         logger.error(f"Failed to initialize generation chain: {str(e)}")
         raise
-
-# Singleton instance for the application
-generation_chain = create_generation_chain()

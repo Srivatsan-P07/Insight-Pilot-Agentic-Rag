@@ -1,12 +1,11 @@
-from config import AppLogger
+import logging
 from typing import Optional
 from google.cloud import datacatalog_v1
 from google.cloud.datacatalog_v1.types import Schema
 from google.api_core.exceptions import NotFound, GoogleAPICallError
 from collections import defaultdict
-from utils import multi_thread
 
-logger = AppLogger.setup()
+logger = logging.getLogger(__name__)
 
 
 class DataplexConnector:
@@ -27,7 +26,7 @@ class DataplexConnector:
         self.schema_store = {}
 
     def fetch_all_entities(self) -> list[datacatalog_v1.Entry]:
-        logger.app(f"Searching for all BigQuery table entities in project: {self.project_id}")
+        logger.info(f"Searching for all BigQuery table entities in project: {self.project_id}")
         scope = datacatalog_v1.SearchCatalogRequest.Scope()
         scope.include_project_ids.append(self.project_id)
 
@@ -39,7 +38,7 @@ class DataplexConnector:
             parts = result.linked_resource.split("/")
             datasets_tables[parts[-3]].append(parts[-1])
 
-        logger.app(f"Found tables across {len(datasets_tables)} datasets.")
+        logger.info(f"Found tables across {len(datasets_tables)} datasets.")
         return dict(datasets_tables)
 
     def fetch_schema(self, linked_resource: str, location: str) -> Optional[Schema]:
@@ -58,7 +57,7 @@ class DataplexConnector:
                     "description": column.description
                 }
 
-            schema = multi_thread(list(entry.schema.columns), format_column)
+            schema = [format_column(column) for column in entry.schema.columns]
             return schema
         except NotFound:
             logger.warning(f"Entry not found for resource: {linked_resource}")
