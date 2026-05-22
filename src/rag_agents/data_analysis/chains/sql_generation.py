@@ -36,7 +36,7 @@ def get_generation_chain():
         )
 
         # Build Chain
-        chain = prompt | GCPConfig.get_llm() | StrOutputParser()
+        chain = (prompt | GCPConfig.get_llm() | StrOutputParser()).with_config({"run_name": "sql_generator"})
         
         logger.info("Generation chain successfully initialized.")
         return chain

@@ -35,6 +35,7 @@ def get_generation_chain():
 
         # Build Chain
         chain = prompt | GCPConfig.get_llm() | StrOutputParser()
+        chain = chain.with_config({"run_name": "document_summarizer"})
         
         logger.info("Generation chain successfully initialized.")
         return chain

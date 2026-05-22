@@ -35,7 +35,8 @@ def create_retrieval_grader():
     )
 
     logger.info("Retrieval grader chain successfully initialized.")
-    return grade_prompt | structured_llm_grader
+    chain = grade_prompt | structured_llm_grader
+    return chain.with_config({"run_name": "schema_grader"})
 
 # Singleton instance for the application
 retrieval_grader = create_retrieval_grader()

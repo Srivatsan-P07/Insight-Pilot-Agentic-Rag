@@ -46,4 +46,5 @@ def get_chart_selector():
     )
 
     logger.info("Chart selector chain initialized successfully.")
-    return prompt | structured_llm
+    chain = prompt | structured_llm
+    return chain.with_config({"run_name": "chart_selector"})
