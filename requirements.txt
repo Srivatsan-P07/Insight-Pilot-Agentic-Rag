@@ -29,3 +29,10 @@ tabulate==0.10.0
 db-dtypes==1.6.0
 pandas==2.3.3
 chainlit==2.11.1
+
+# Tracing
+openinference-instrumentation-langchain
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+openinference-semantic-conventions
+arize-phoenix-otel

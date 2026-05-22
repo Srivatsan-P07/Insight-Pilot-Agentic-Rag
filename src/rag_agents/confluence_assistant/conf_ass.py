@@ -2,8 +2,9 @@ from rag_agents.confluence_assistant.graph.state import GraphState
 from rag_agents.confluence_assistant.graph.graph import app
 from langchain_core.messages import HumanMessage, AIMessage
 from typing import Tuple, Optional
+from tracing import trace_chain
 
-
+@trace_chain("confluence_chain")
 async def conf_chain(question: str, graph_state: Optional[GraphState] = None) -> Tuple[str, GraphState]:
     if graph_state is None:
         graph_state = GraphState(

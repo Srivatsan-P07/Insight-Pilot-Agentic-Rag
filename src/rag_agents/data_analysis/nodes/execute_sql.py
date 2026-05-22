@@ -4,9 +4,11 @@ from ingestor.bigquery_connector import BigQueryConnector
 from config import Config, GCPConfig
 
 from rag_agents.data_analysis.graph.state import GraphState
+from tracing import trace_node
 
 logger = logging.getLogger(__name__)
 
+@trace_node("execute_sql")
 def execute_sql(graph_state: GraphState) -> GraphState:
     question = graph_state.question
     schemas = graph_state.schemas

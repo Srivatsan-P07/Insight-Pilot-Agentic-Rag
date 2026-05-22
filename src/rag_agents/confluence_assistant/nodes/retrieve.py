@@ -4,9 +4,11 @@ from rag_agents.confluence_assistant.graph.state import GraphState
 from vectordb.pgvector import PGVectorDB
 from ingestor.confluence_connector import ConfluenceConnector
 import logging
+from tracing import trace_node
 
 logger = logging.getLogger(__name__)
 
+@trace_node("confluence_retrieve")
 async def retrieve(graph_state: GraphState) -> Dict[str, Any]:
     """
     Retrieves relevant documents from the vector database based on the current graph state.

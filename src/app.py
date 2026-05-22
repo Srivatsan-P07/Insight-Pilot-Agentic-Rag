@@ -1,5 +1,19 @@
 import asyncio
 import chainlit as cl
+
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from openinference.instrumentation.langchain import LangChainInstrumentor
+
+# Configure OpenTelemetry to send traces to Phoenix via HTTP
+endpoint = "http://localhost:6006/v1/traces"
+tracer_provider = TracerProvider()
+tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint)))
+trace.set_tracer_provider(tracer_provider)
+LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+
 from rag_agents.confluence_assistant.conf_ass import conf_chain
 from rag_agents.data_analysis.data_analyst import data_chain
 from config import AppLogger

@@ -3,8 +3,9 @@ from rag_agents.data_analysis.graph.graph import app
 from typing import Tuple, Optional
 import chainlit as cl
 import plotly.express as px
+from tracing import trace_chain
 
-
+@trace_chain("data_chain")
 async def data_chain(question: str, graph_state: Optional[GraphState] = None) -> Tuple[str, GraphState]:
     # Initialize graph state if not provided
     graph_state = GraphState(

@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import List, Dict, Optional
 import asyncio
 from bs4 import BeautifulSoup
+from tracing import trace_retriever, trace_tool
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ class ConfluenceConnector:
                     raise
         return {}
 
+    @trace_retriever("confluence_fetch_pages")
     async def fetch_pages(self, space_key: str, updated_after: Optional[str] = None, limit: int = 50) -> List[Dict]:
         logger.info(f"Fetching pages for space {space_key} updated after {updated_after}")
         start = 0
@@ -113,6 +115,7 @@ class ConfluenceConnector:
             start += limit
         return ids
 
+    @trace_retriever("confluence_fetch_page_by_id")
     async def fetch_page_by_id(self, page_id: str) -> Optional[Dict]:
         logger.info(f"Fetching page by ID: {page_id}")
         try:
@@ -122,6 +125,7 @@ class ConfluenceConnector:
             logger.error(f"Failed to fetch page {page_id}: {e}")
             return None
 
+    @trace_tool("confluence_sync")
     async def sync(self, space_key: str, last_sync_time: Optional[str] = None, previous_page_ids: Optional[set] = None ):
         logger.info(f"Starting sync for space {space_key}")
         updated_pages, current_ids = await asyncio.gather(
