@@ -41,7 +41,7 @@ class ConfluenceIngestorPipeline:
             try:
                 content = (doc.get("content") or "").strip()
                 if not content:
-                    print(f"Skipping empty document: {doc.get('external_id')}")
+                    logger.info(f"Skipping doc {doc['external_id']} due to empty content.")
                     return None
                 
                 # Use async embedding

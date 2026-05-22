@@ -33,7 +33,6 @@ async def data_chain(question: str, graph_state: Optional[GraphState] = None) ->
     # Generate and display chart
     x_axis = graph_state.chart_config.get("x")
     y_axis = graph_state.chart_config.get("y")
-    print(f"Generating {chart_type} chart with x: {x_axis} and y: {y_axis}")
     
     if chart_type == "pie":
         fig = px.pie(graph_state.execution, names=x_axis, values=y_axis, title=f"{x_axis} Distribution")

@@ -14,7 +14,6 @@ async def chart_selector_node(state: GraphState):
     
     chain = get_chart_selector()
     selected_columns = chain.invoke({"question": question, "schema": schema, "columns": columns})
-    print(selected_columns)
     
     state.chart_config = {
         "type": selected_columns.chart_type if selected_columns.chart_type in ["Bar", "Pie", "Line"] else "table",
