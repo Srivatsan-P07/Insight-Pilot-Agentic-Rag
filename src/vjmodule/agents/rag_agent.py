@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generator
 
 from config import Config
-from connectors.qdrant import QdrantConnector
+from vjmodule.connectors.qdrant import QdrantConnector
 
 
 def stream_confluence(question: str) -> Generator[str, None, None]:

@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Generator
 
 from config import Config
-from connectors import dataplex_catalog
+from vjmodule.connectors import dataplex_catalog
 
 
 def stream_sql_analysis(question: str) -> Generator[str, None, None]:
     """Yield streaming SQL generation, execution, and LLM analysis."""
-    from connectors.bigquery import execute_sql
+    from vjmodule.connectors.bigquery import execute_sql
 
     yield "_Fetching metadata and generating SQL..._\n\n"
     try:

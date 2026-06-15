@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Generator
 
-from connectors.gcp_billing import get_cost_summary
+from vjmodule.connectors.gcp_billing import get_cost_summary
 
 
 def stream_cost_analysis(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from config import Config
+from config import GCPConfig
 
 _VALID_AGENTS = {
     "gcp_cost", "gcp_recommender", "github", "code_optimizer", "docs", "sql"
@@ -26,7 +26,7 @@ Question: {question}
 Return ONLY the agent ID. No explanation."""
 
     try:
-        agent_id = Config.llm.invoke(prompt).content.strip().lower().strip('"\' ')
+        agent_id = GCPConfig.get_llm().invoke(prompt).content.strip().lower().strip('"\' ')
         return agent_id if agent_id in _VALID_AGENTS else "docs"
     except Exception:
         return "docs"
@@ -47,5 +47,5 @@ def route_question(question: str) -> str:
     Return ONLY the category word.
     """
     
-    response = Config.llm.invoke(prompt)
+    response = GCPConfig.get_llm().invoke(prompt)
     return response.content.strip()

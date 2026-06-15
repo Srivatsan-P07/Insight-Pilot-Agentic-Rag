@@ -36,3 +36,5 @@ opentelemetry-sdk
 opentelemetry-exporter-otlp
 openinference-semantic-conventions
 arize-phoenix-otel
+
+github

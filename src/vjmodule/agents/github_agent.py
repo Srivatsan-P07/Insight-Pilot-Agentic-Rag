@@ -7,8 +7,8 @@ from __future__ import annotations
 import json
 from typing import Optional, Generator
 
-from config import Config
-from connectors.github import GitHubConnector
+from config import GCPConfig
+from vjmodule.connectors.github import GitHubConnector
 
 
 # def stream_github_analysis(
@@ -451,7 +451,7 @@ def stream_github_analysis(
     Explain why.
     '''
 
-        for chunk in Config.llm.stream(prompt):
+        for chunk in GCPConfig.get_llm().stream(prompt):
             if chunk.content:
                 yield chunk.content
 

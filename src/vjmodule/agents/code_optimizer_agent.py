@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 from typing import Generator, Optional
 
-from config import Config
+from config import GCPConfig
 
 # ── Patterns ──────────────────────────────────────────────────────────────────
 
@@ -88,7 +88,7 @@ def _detect_github_path(message: str) -> Optional[tuple[str, str, str]]:
         if repo.lower() in _GH_RESERVED:
             continue
         try:
-            from connectors.github import GitHubConnector
+            from vjmodule.connectors.github import GitHubConnector
             owner = GitHubConnector().whoami() or ""
         except Exception:
             owner = ""
@@ -143,7 +143,7 @@ def _fetch_github_code(repo_full_name: str, path: str, branch: str = "") -> tupl
             f"`your-username/{repo}/blob/{branch}/{path}`"
         )
     try:
-        from connectors.github import GitHubConnector
+        from vjmodule.connectors.github import GitHubConnector
         connector = GitHubConnector()
         files = connector.get_folder_contents(
             repo_full_name, path=path, max_files=20,
@@ -169,7 +169,7 @@ def _fetch_github_code(repo_full_name: str, path: str, branch: str = "") -> tupl
 def _fetch_billing_context(project_id: str) -> str:
     """Return a short cost summary string, or empty string on any failure."""
     try:
-        from connectors.gcp_billing import get_cost_summary
+        from vjmodule.connectors.gcp_billing import get_cost_summary
         summary = get_cost_summary(project_id, days=30)
         cost_df = summary["cost_data"]
         billing = summary["billing_info"]
@@ -335,7 +335,7 @@ After all issues, two lines only:
 No summaries. No "what's already good" section. Output issues only."""
 
     try:
-        for chunk in Config.llm.stream(prompt):
+        for chunk in GCPConfig.get_llm().stream(prompt):
             if chunk.content:
                 yield chunk.content
     except Exception as exc:

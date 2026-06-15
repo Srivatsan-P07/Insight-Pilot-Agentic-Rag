@@ -10,9 +10,9 @@ from typing import Generator
 
 import pandas as pd
 
-from config import Config
-from connectors.gcp_recommender import get_recommendations
-from connectors.gcp_billing import get_cost_summary
+from config import GCPConfig
+from vjmodule.connectors.gcp_recommender import get_recommendations
+from vjmodule.connectors.gcp_billing import get_cost_summary
 
 
 def stream_recommendations(
@@ -175,7 +175,7 @@ List any services from the billing data that look expensive but show patterns su
 
 Bold all monetary amounts. Use real numbers throughout. If you cannot make a recommendation with evidence, say so explicitly rather than guessing."""
 
-        for chunk in Config.llm.stream(prompt):
+        for chunk in GCPConfig.get_llm().stream(prompt):
             if chunk.content:
                 yield chunk.content
 
